@@ -91,14 +91,14 @@ class ColorPicker:
                 import json
 
                 try:
-                    with open("config.json", "r") as file:
+                    with open("./config.json", "r") as file:
                         data = json.load(file)
                         data["color"] = self.hex_vals[self.color_name]
 
-                except FileNotFoundError, json.JSONDecodeError:
+                except (FileNotFoundError, json.JSONDecodeError):
                     data = {}
-                
-                with open("config.json", "w") as file:
+
+                with open("./config.json", "w") as file:
                     json.dump(data, file, indent=4)
 
                 messagebox.showinfo(
@@ -109,6 +109,7 @@ class ColorPicker:
 
                 self.root.destroy()
 
-root =  tk.Tk()
-ColorPicker(root)
-root.mainloop()
+if __name__ == "__main__":
+    root =  tk.Tk()
+    ColorPicker(root)
+    root.mainloop()
