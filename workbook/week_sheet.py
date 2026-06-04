@@ -80,10 +80,3 @@ class WeekSheet:
             (names["Sortable name"] != "Lu, Lingma")]
 
             return names.dropna()
-
-
-wb = Workbook("Atten.xlsx")
-for i in range(1,16):
-    WeekSheet(i, wb)
-
-wb.close()
