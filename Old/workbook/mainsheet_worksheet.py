@@ -1,6 +1,6 @@
 import json
 from tkinter import Tk, filedialog
-import color_chooser
+#import color_chooser
 
 class MainPage:
     def __init__(self, root):
