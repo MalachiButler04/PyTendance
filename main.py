@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import Tk, filedialog
+from tkinter import Tk, filedialog, messagebox
 import json
 from pathlib import Path
 from workbook.util.color_chooser import ColorPicker
@@ -11,9 +11,9 @@ info_config = BASE_DIR / "config" / "book_config.json"
 class Main:
     def __init__(self, root: Tk):
         self.root = root
-        root.eval("tk::PlaceWindow . center")
         root.title("PyTendance")
         root.geometry("300x200")
+        root.eval("tk::PlaceWindow . center")
         root.resizable(False, False)
 
         icon = tk.PhotoImage(file="assets/492snake_100855.png")
@@ -43,14 +43,19 @@ class Main:
         self.button_frame.destroy()
         self.upload_roster()
         self.init_colorpicker()
+        print("works")
 
     def init_colorpicker(self):
         self.cp = ColorPicker(self.root, on_complete=self.init_termpicker)
         self.cp.build_gui()
 
     def init_termpicker(self):
-        self.tc = TermChooser(self.root)
+        self.tc = TermChooser(self.root, on_complete=self.success_screen)
         self.tc.build_gui()
+
+    def success_screen(self):
+        self.root.destroy()
+        messagebox.showinfo(title="Success!", message="Your workbook is under-wraps! Have an amazing semester!")
 
     @staticmethod
     def upload_roster() -> None:

@@ -7,6 +7,7 @@ class ColorPicker:
         self.root = root
         self.on_complete = on_complete
         root.geometry("300x350")
+        
         self.canvas_width = 250
         self.canvas_height = 120
         self.size = 70
@@ -28,7 +29,6 @@ class ColorPicker:
         }
 
     def build_gui(self):
-        # Embed directly into root instead of a Toplevel
         self.frame = tk.Frame(self.root)
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -114,11 +114,9 @@ class ColorPicker:
             f"Theme confirmed: {self.color_name} ({self.hex_vals[self.color_name]})",
             icon=messagebox.INFO,
         )
-
-        self.is_done = True
-
-        if self.frame is not None:
-            self.frame.destroy()
-
+        
+       
+        self.frame.destroy()
+            
         if self.on_complete:
             self.on_complete()
