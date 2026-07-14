@@ -40,10 +40,12 @@ class Main:
         edit_existing.pack(pady=5)
 
     def init_workbook(self):
-        self.button_frame.destroy()
-        self.upload_roster()
-        self.init_colorpicker()
-        print("works")
+        warning = messagebox.askokcancel(title="Warning", message="This action will erase any previous worksheet information. Continue?", icon="warning")
+        
+        if warning: 
+            self.button_frame.destroy()
+            self.upload_roster()
+            self.init_colorpicker()
 
     def init_colorpicker(self):
         self.cp = ColorPicker(self.root, on_complete=self.init_termpicker)
