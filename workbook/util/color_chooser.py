@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
-
 class ColorPicker:
     def __init__(self, root):
         self.root = root
         self.root.geometry("300x260")
         self.root.title("Choose your color!")
-        self.root.eval('tk::PlaceWindow . center') 
 
         self.canvas_width = 250
         self.canvas_height = 120
@@ -27,12 +25,15 @@ class ColorPicker:
         self.build_ui()
 
     def build_ui(self):
-        self.label_frame = tk.Frame(self.root)
+        wrapper = tk.Frame(self.root)
+        wrapper.place(anchor="center", relx=.5, rely=.5)
+        
+        self.label_frame = tk.Frame(wrapper)
         self.color_label = tk.Label(self.label_frame, text="Choose your color!")
         self.color_label.pack()
         self.label_frame.pack(pady=5)
 
-        self.canv_frame = tk.Frame(self.root)
+        self.canv_frame = tk.Frame(wrapper)
         self.canv_frame.pack(pady=3)
 
         self.canvas = tk.Canvas(
@@ -55,10 +56,10 @@ class ColorPicker:
             x1, y1, x2, y2, fill="#FFFFFF"
         )
 
-        self.button_frame = tk.Frame(self.root)
+        self.button_frame = tk.Frame(wrapper)
         self.button_frame.pack(pady=5)
 
-        self.selected_color = tk.StringVar(self.root, value=list(self.hex_vals.keys())[0])
+        self.selected_color = tk.StringVar(wrapper, value=list(self.hex_vals.keys())[0])
 
         self.ops = tk.OptionMenu(
             self.button_frame,
@@ -68,7 +69,7 @@ class ColorPicker:
         )
         self.ops.pack()
 
-        self.conf_button = tk.Button(self.root, text="Submit", command=self.get_conf)
+        self.conf_button = tk.Button(wrapper, text="Submit", command=self.get_conf)
         self.conf_button.pack(pady=1)
 
         first_color = list(self.hex_vals.keys())[0]
@@ -91,14 +92,14 @@ class ColorPicker:
                 import json
 
                 try:
-                    with open("./config.json", "r") as file:
+                    with open("config/book_config.json", "r") as file:
                         data = json.load(file)
                         data["color"] = self.hex_vals[self.color_name]
 
                 except (FileNotFoundError, json.JSONDecodeError):
                     data = {}
 
-                with open("./config.json", "w") as file:
+                with open("config/book_config.json", "w") as file:
                     json.dump(data, file, indent=4)
 
                 messagebox.showinfo(
@@ -108,8 +109,3 @@ class ColorPicker:
                 )
 
                 self.root.destroy()
-
-if __name__ == "__main__":
-    root =  tk.Tk()
-    ColorPicker(root)
-    root.mainloop()
