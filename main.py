@@ -4,7 +4,7 @@ import json
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
 import pandas as pd 
-from workbook.config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
+from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
 
 class Main:
     def __init__(self, root: Tk):
@@ -95,7 +95,7 @@ class Main:
         if self.ref:
             try:
                 roster_df: pd.DataFrame = pd.read_csv(self.ref)
-                student_array = roster_df["Sortable name"].values
+                cleaned = roster_df[roster_df["Sortable name"] != "Lu, Lingma"]["Sortable name"]
             except FileNotFoundError:
                 messagebox.showerror(title="Error", message=f"Could not find file:\n{self.ref}")
                 self.ref = None
@@ -117,7 +117,7 @@ class Main:
 
                 students = student_data["students"]
 
-                for i in student_array:
+                for i in cleaned:
                     students.append(i)
                 
                 student_data["students"] = students
