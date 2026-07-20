@@ -36,33 +36,45 @@ class Main:
 
         create_new = tk.Button(self.button_frame, text="New Worksheet", command=lambda: self.init_workbook(), width=15)
         create_new.pack(pady=5)
+
         edit_existing: tk.Button = tk.Button(self.button_frame, text="Edit Worksheet", command=lambda: print("edit works"), width=15)
         edit_existing.pack(pady=5)
 
-    def init_workbook(self):
+    def on_exit_create(self) -> None:
+      
+        exit_prompt = messagebox.askyesno(title="Leaving so soon?" , message="Exiting now will reset your progress. Continue?", icon="warning")
+
+        if exit_prompt:
+            self.reset_json()
+            self.root.destroy()
+        
+    def init_workbook(self) -> None:
         warning = messagebox.askokcancel(title="Warning", message="This action will erase any previous worksheet information. Continue?", icon="warning")
         
         if warning: 
-            self.button_frame.destroy()
+            self.reset_json()
             self.upload_roster()
-            self.init_colorpicker()
 
-    def init_colorpicker(self):
+            if not self.check_ref():
+                self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
+                self.button_frame.destroy()
+                self.init_colorpicker()
+            else:
+                messagebox.showerror(title="Error", message="Please select your Photo Roster to continue")
+
+    def init_colorpicker(self) -> None:
         self.cp = ColorPicker(self.root, on_complete=self.init_termpicker)
         self.cp.build_gui()
 
-    def init_termpicker(self):
+    def init_termpicker(self) -> None:
         self.tc = TermChooser(self.root, on_complete=self.success_screen)
         self.tc.build_gui()
 
-    def success_screen(self):
+    def success_screen(self) -> None:
         self.root.destroy()
         messagebox.showinfo(title="Success!", message="Your workbook is under-wraps! Have an amazing semester!")
 
-    @staticmethod
-    def upload_roster() -> None:
-        global info_config
-
+    def upload_roster(self) -> None:
         file_upload: str = filedialog.askopenfilename(
             title="Please select Photo Roster",
             filetypes=[
@@ -77,12 +89,26 @@ class Main:
 
         with open(info_config, "w") as fw:
             json.dump(data, fw, indent=4)
+    
+    def reset_json(self) -> None:
+        with open(info_config, "r") as fr:
+            data = json.load(fr)
+        
+        with open(info_config, "w") as fw:
+            data["ref"] = ""
+            data["color"] = ""
+            data["term"] = ""
+            data["days"] = []
 
-        print(f"upload successful path: {file_upload}")
+            json.dump(data, fw, indent=4)
 
-
+    @staticmethod
+    def check_ref() -> bool:
+        with open(info_config, "r") as fr:
+            reader = json.load(fr)
+            return reader["ref"] == ""
+        
 if __name__ == "__main__":
     root = Tk()
-
     mn = Main(root)
     root.mainloop()

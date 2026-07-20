@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import Tk, messagebox
 import json
 
-
 class TermChooser:
     def __init__(self, root: Tk, on_complete=None):
         self.root = root
