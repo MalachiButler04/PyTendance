@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import Tk, filedialog, messagebox
 import json
-from pathlib import Path
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
-
-BASE_DIR = Path(__file__).resolve().parent
-info_config = BASE_DIR / "config" / "book_config.json"
+import pandas as pd 
+from workbook.config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
 
 class Main:
     def __init__(self, root: Tk):
@@ -16,7 +14,9 @@ class Main:
         root.eval("tk::PlaceWindow . center")
         root.resizable(False, False)
 
-        icon = tk.PhotoImage(file="assets/492snake_100855.png")
+        self.ref = None
+
+        icon = tk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
         root.iconphoto(True, icon)
 
         property_label = tk.Label(root, text="Malachi A. Butler and Jacob T. Imbus", font=("Aptos", 5))
@@ -55,7 +55,7 @@ class Main:
             self.reset_json()
             self.upload_roster()
 
-            if not self.check_ref():
+            if self.has_ref():
                 self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
                 self.button_frame.destroy()
                 self.init_colorpicker()
@@ -83,30 +83,71 @@ class Main:
             ]
         )
 
-        with open(info_config, "r") as fr:
+        with open(INFO_CONFIG, "r") as fr:
             data = json.load(fr)
+
+            self.ref = file_upload if file_upload != "" else None
             data["ref"] = file_upload
 
-        with open(info_config, "w") as fw:
+        with open(INFO_CONFIG, "w") as fw:
             json.dump(data, fw, indent=4)
+        
+        if self.ref:
+            try:
+                roster_df: pd.DataFrame = pd.read_csv(self.ref)
+                student_array = roster_df["Sortable name"].values
+            except FileNotFoundError:
+                messagebox.showerror(title="Error", message=f"Could not find file:\n{self.ref}")
+                self.ref = None
+                return
+            except pd.errors.ParserError:
+                messagebox.showerror(title="Error", message="The selected file could not be read as a valid CSV.")
+                self.ref = None
+                return
+            except KeyError:
+                messagebox.showerror(
+                    title="Error",
+                    message='The selected CSV is missing a required "Sortable name" column.'
+                )
+                self.ref = None
+                return
+
+            with open(STUDENT_CONFIG, "r") as frs:
+                student_data = json.load(frs)
+
+                students = student_data["students"]
+
+                for i in student_array:
+                    students.append(i)
+                
+                student_data["students"] = students
+                
+            with open(STUDENT_CONFIG, "w") as fws:
+                json.dump(student_data, fws, indent=4)
+
     
     def reset_json(self) -> None:
-        with open(info_config, "r") as fr:
-            data = json.load(fr)
+        with open(INFO_CONFIG, "r") as fri , open(STUDENT_CONFIG, "r") as frs:
+            data_info = json.load(fri)
+            data_student = json.load(frs)
         
-        with open(info_config, "w") as fw:
-            data["ref"] = ""
-            data["color"] = ""
-            data["term"] = ""
-            data["days"] = []
+        with open(INFO_CONFIG, "w") as fwi, open(STUDENT_CONFIG, "w") as fws:
+            data_info["ref"] = ""
+            data_info["color"] = ""
+            data_info["term"] = ""
+            data_info["days"] = []
 
-            json.dump(data, fw, indent=4)
+            data_student["students"] = []
+
+            json.dump(data_info, fwi, indent=4)
+            json.dump(data_student, fws, indent=4)
 
     @staticmethod
-    def check_ref() -> bool:
-        with open(info_config, "r") as fr:
+    def has_ref() -> bool:
+        """Return True if a photo roster reference has been set in the config."""
+        with open(INFO_CONFIG, "r") as fr:
             reader = json.load(fr)
-            return reader["ref"] == ""
+            return reader["ref"] != ""
         
 if __name__ == "__main__":
     root = Tk()
