@@ -56,10 +56,3 @@ class TermChooser:
 
         if self.on_complete:
             self.on_complete()
-
-
-if __name__ == "__main__":
-    root = Tk()
-    tc = TermChooser(root)
-    tc.build_gui()
-    root.mainloop()
