@@ -153,6 +153,3 @@ class Tabloid:
         with open(INFO_CONFIG, "r") as fr:
             data = json.load(fr)
             return data["ref"], data["color"], data["term"], data["days"]
-
-
-r = Tabloid()

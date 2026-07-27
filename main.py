@@ -4,6 +4,7 @@ import json
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
 import pandas as pd 
+from attendance_tabloid import Tabloid
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
 
 class Main:
@@ -72,6 +73,7 @@ class Main:
 
     def success_screen(self) -> None:
         self.root.destroy()
+        Tabloid()
         messagebox.showinfo(title="Success!", message="Your workbook is under-wraps! Have an amazing semester!")
 
     def upload_roster(self) -> None:
