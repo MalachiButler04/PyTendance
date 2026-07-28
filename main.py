@@ -20,7 +20,6 @@ class Main:
 
         self.ref = None
         self.manager_frame = None
-        self.prep_to_destroy = None
 
         icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
         root.iconphoto(True, icon)
@@ -43,7 +42,7 @@ class Main:
 
         edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
         edit_existing.pack(pady=5)
-    
+
     def back_to_main(self):
         conf = messagebox.askokcancel(title="Leaving so soon?", message="Would you like to return to the main menu?")
         
@@ -74,7 +73,6 @@ class Main:
             self.button_frame.destroy()
             sm = StudentManager(self.root)
             self.manager_frame = sm.build_ui()
-            self.prep_to_destroy = ttk.Button(self.root, text="Back", command=self.back_to_main).place(rely=.7, relx=.5, anchor="center")
         else:
             messagebox.showerror(title="No workbook created!", message="There was an error locating your attendance sheet. Please try again or press 'Create New'")
             
