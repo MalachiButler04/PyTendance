@@ -1,58 +1,61 @@
 import xlsxwriter as xl
 from xlsxwriter import Workbook
 import json
+import os
+from os import remove
 import pandas as pd
 from config.path_config import STUDENT_CONFIG, INFO_CONFIG
 
+
 class Tabloid:
-    def __init__(self):
-        self.weeks = [f"Week {i}" for i in range(1,16)] 
+    def __init__(self, skip_init: bool = False):
+        self.weeks = [f"Week {i}" for i in range(1, 16)]
         self.students = self.load_students()
         self.wb = Workbook("Attendance Tabloid.xlsx")
 
         self.ref, self.color, self.term, self.days = self.load_config()
-        
+
         self.header_format = self.wb.add_format({
-                "align": "center", 
-                "bold":True,
-                "bg_color": self.color,
-                "border": 1
+            "align": "center",
+            "bold": True,
+            "bg_color": self.color,
+            "border": 1
         })
 
-        self.centered_vals = self.wb.add_format({"align":"center"})
-        self.centeredwborder = self.wb.add_format({"align":"center","border":1})
-        
-        self.init_workbook()
+        self.centered_vals = self.wb.add_format({"align": "center"})
+        self.centeredwborder = self.wb.add_format({"align": "center", "border": 1})
+
+        if not skip_init:
+            self.init_workbook()
 
     def init_workbook(self):
         self.results_page()
 
         for i in range(15):
             self.week_sheet(i)
-        
+
         self.attended_labs_page()
 
         self.wb.close()
 
     def attended_labs_page(self):
         sheet = self.wb.add_worksheet("Total Labs Attended")
-      
-        sheet.write(0,0, "Names", self.header_format)
-        sheet.write(0,1, "Total", self.header_format)
-        sheet.write(0,2, " (%) ", self.header_format)
 
-        percent_format = self.wb.add_format({"align":"center","num_format": "0.00%"})
-        
+        sheet.write(0, 0, "Names", self.header_format)
+        sheet.write(0, 1, "Total", self.header_format)
+        sheet.write(0, 2, " (%) ", self.header_format)
+
+        percent_format = self.wb.add_format({"align": "center", "num_format": "0.00%"})
+
         max_width = len(self.students[0])
         for row, student in enumerate(self.students, start=1):
             sheet.write(row, 0, student)
 
             max_width = max(len(student), max_width)
-            sheet.set_column(0,0, max_width)
+            sheet.set_column(0, 0, max_width)
 
             sheet.write_formula(row, 1, f"=SUM('Week 1:Week 15'!H{row+1})", self.centered_vals)
             sheet.write_formula(row, 2, f"=SUM('Week 1:Week 15'!H{row+1}) / 16", percent_format)
-            
 
     def results_page(self):
         sheet = self.wb.add_worksheet("Results")
@@ -61,10 +64,10 @@ class Tabloid:
         for col, header in enumerate(headers):
             sheet.write(0, col, header, self.header_format)
             sheet.set_column(0, col, width=10)
-        
+
         sheet.write(0, 16, "Total Attended", self.header_format)
         sheet.set_column(16, 16, 15)
-    
+
         max_width = len(self.students[0])
         for row, student in enumerate(self.students, start=1):
             sheet.write(row, 0, student, self.centeredwborder)
@@ -72,51 +75,51 @@ class Tabloid:
             max_width = max(len(student), max_width)
             sheet.set_column(0, 0, max_width)
 
-            for i in range(1,16):
+            for i in range(1, 16):
                 sheet.write_formula(row, i, f"='Week {i}'!G{row+1}", self.centeredwborder)
-            
+
             sheet.write_formula(row, 16, f"=SUM(B{row+1}:P{row+1})", self.centeredwborder)
-        
+
         red_bg = self.wb.add_format({"bg_color": "#ea9999"})
         green_bg = self.wb.add_format({"bg_color": "#b7e1cd"})
         gold_bg = self.wb.add_format({"bg_color": "#fef2cd"})
         platinum_bg = self.wb.add_format({"bg_color": "#ffe599"})
 
-        sheet.conditional_format("B2:P26", {
-            'type': 'cell', 
+        sheet.conditional_format(f"B2:P{len(self.students)+1}", {
+            'type': 'cell',
             'criteria': "=",
             "value": 0,
-            "format": red_bg 
+            "format": red_bg
         })
-        
-        sheet.conditional_format("B2:P26", {
-            'type': 'cell', 
+
+        sheet.conditional_format(f"B2:P{len(self.students)+1}", {
+            'type': 'cell',
             'criteria': "between",
             'minimum': 1,
             'maximum': 2,
-            "format": green_bg 
-        })
-        
-        sheet.conditional_format("B2:P26", {
-            'type': 'cell', 
-            'criteria': "=",
-            "value": 3,
-            "format": gold_bg 
-        })
-        
-        sheet.conditional_format("B2:P26", {
-            'type': 'cell', 
-            'criteria': "=",
-            "value": 4,
-            "format": platinum_bg 
+            "format": green_bg
         })
 
-    def week_sheet(self, week:int):
+        sheet.conditional_format(f"B2:P{len(self.students)+1}", {
+            'type': 'cell',
+            'criteria': "=",
+            "value": 3,
+            "format": gold_bg
+        })
+
+        sheet.conditional_format(f"B2:P{len(self.students)+1}", {
+            'type': 'cell',
+            'criteria': "=",
+            "value": 4,
+            "format": platinum_bg
+        })
+
+    def week_sheet(self, week: int):
         sheet = self.wb.add_worksheet(self.weeks[week])
         header = [
-            f"Names", 
-            f"{self.days[0]} Lecture", 
-            f"{self.days[0]} Lab", 
+            "Names",
+            f"{self.days[0]} Lecture",
+            f"{self.days[0]} Lab",
             f"{self.days[1]} Lecture",
             "Attended Help Session?"
         ]
@@ -131,7 +134,7 @@ class Tabloid:
             sheet.write(0, col, text, self.header_format)
             width = len(text) * 1.1 if len(text) < 20 else len(text) * 1.2
             sheet.set_column(col, col, width)
-        
+
         max_width = len(self.students[0])
         for row, student in enumerate(self.students, start=1):
             sheet.write(row, 0, student)
@@ -142,12 +145,81 @@ class Tabloid:
 
             for i in range(1, 5):
                 sheet.insert_checkbox(row, i, False)
-            
+
+    def week_sheet_with_data(self, week: int, WEEK_FRAME):
+
+        sheet = self.wb.add_worksheet(self.weeks[week])
+        header = [
+            "Names",
+            f"{self.days[0]} Lecture",
+            f"{self.days[0]} Lab",
+            f"{self.days[1]} Lecture",
+            "Attended Help Session?"
+        ]
+
+        sheet.write(0, 6, "EOW Summary", self.header_format)
+        sheet.write(0, 7, "Attended Lab", self.header_format)
+
+        sheet.set_column(0, 6, len("EOW Summary") * 1.5)
+        sheet.set_column(0, 7, len("Attended Lab") * 1.5)
+
+        for col, text in enumerate(header):
+            sheet.write(0, col, text, self.header_format)
+            width = len(text) * 1.1 if len(text) < 20 else len(text) * 1.2
+            sheet.set_column(col, col, width)
+
+        max_width = len(self.students[0])
+        for row, student in enumerate(self.students, start=1):
+            sheet.write(row, 0, student)
+            max_width = max(len(student), max_width) * .98
+            sheet.set_column(0, 0, max_width)
+            sheet.write_formula(row, 6, f"=COUNTIF(B{row+1}:E{row+1}, TRUE)", self.centered_vals)
+            sheet.write_formula(row, 7, f"=COUNTIF(C{row+1}, TRUE)", self.centered_vals)
+
+            week_key = f"Week {week + 1}"
+            v1, v2, v3 = WEEK_FRAME[week_key].iloc[row - 1][[
+                f"{self.days[0]} Lecture",
+                f"{self.days[0]} Lab",
+                f"{self.days[1]} Lecture"
+            ]]
+
+            sheet.insert_checkbox(row, 1, bool(v1))
+            sheet.insert_checkbox(row, 2, bool(v2))
+            sheet.insert_checkbox(row, 3, bool(v3))
+
+    def rebuild_workbook(self):
+        from workbook.util.student_manager import StudentManager
+
+        if os.path.exists("Attendance Tabloid.xlsx"):
+            remove("Attendance Tabloid.xlsx")
+
+        self.wb = Workbook("Attendance Tabloid.xlsx")
+        self.header_format = self.wb.add_format({
+            "align": "center",
+            "bold": True,
+            "bg_color": self.color,
+            "border": 1
+        })
+        self.centered_vals = self.wb.add_format({"align": "center"})
+        self.centeredwborder = self.wb.add_format({"align": "center", "border": 1})
+
+        self.students = self.load_students()
+
+        WEEK_FRAME = StudentManager.FRAMES
+
+        self.results_page()
+
+        for i in range(15):
+            self.week_sheet_with_data(i, WEEK_FRAME)
+
+        self.attended_labs_page()
+        self.wb.close()
+
     @staticmethod
     def load_students() -> list[str]:
         with open(STUDENT_CONFIG, "r") as fr:
             return json.load(fr)["students"]
-    
+
     @staticmethod
     def load_config():
         with open(INFO_CONFIG, "r") as fr:

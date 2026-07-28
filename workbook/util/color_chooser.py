@@ -1,12 +1,12 @@
 import json
-import tkinter as tk
+import ttkbootstrap as ttk
 from tkinter import messagebox
 
 class ColorPicker:
-    def __init__(self, root: tk.Tk, on_complete=None):
+    def __init__(self, root: ttk.Window, on_complete=None):
         self.root = root
         self.on_complete = on_complete
-        root.geometry("300x350")
+        root.geometry("300x315")
         
         self.canvas_width = 250
         self.canvas_height = 120
@@ -29,18 +29,13 @@ class ColorPicker:
         }
 
     def build_gui(self):
-        self.frame = tk.Frame(self.root)
+        self.frame = ttk.Frame(self.root)
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.label_frame = tk.Frame(self.frame)
-        self.color_label = tk.Label(self.label_frame, text="Choose your color!")
-        self.color_label.pack()
-        self.label_frame.pack(pady=5)
+        self.canv_frame = ttk.Frame(self.frame)
+        self.canv_frame.pack(ipadx=3)
 
-        self.canv_frame = tk.Frame(self.frame)
-        self.canv_frame.pack(pady=3)
-
-        self.canvas = tk.Canvas(
+        self.canvas = ttk.Canvas(
             self.canv_frame,
             width=self.canvas_width,
             height=self.canvas_height,
@@ -61,13 +56,21 @@ class ColorPicker:
             x1, y1, x2, y2, fill="#FFFFFF", outline="black"
         )
 
-        self.button_frame = tk.Frame(self.frame)
-        self.button_frame.pack(pady=5)
+        # Text item centered inside the rectangle
+        self.hex_text = self.canvas.create_text(
+            center_x, center_y, text="", fill="black", font=("TkDefaultFont", 9, "bold")
+        )
+
+        self.color_label = ttk.Label(self.frame, text="", borderwidth=2)
+        self.color_label.place(relx=0.4154, rely=.5)
+        
+        self.button_frame = ttk.Frame(self.frame)
+        self.button_frame.pack(ipady=10)
 
         first_color = next(iter(self.hex_vals))
-        self.selected_color = tk.StringVar(self.root, value=first_color)
+        self.selected_color = ttk.StringVar(self.root, value=first_color)
 
-        self.ops = tk.OptionMenu(
+        self.ops = ttk.OptionMenu(
             self.button_frame,
             self.selected_color,
             *self.hex_vals,
@@ -75,14 +78,18 @@ class ColorPicker:
         )
         self.ops.pack()
 
-        self.conf_button = tk.Button(self.frame, text="Submit", command=self.get_conf)
-        self.conf_button.pack(pady=1)
+        self.conf_button = ttk.Button(self.frame, text="Submit", command=self.get_conf, bootstyle="secondary")
+        self.conf_button.pack()
 
         self.change_color(first_color)
 
     def change_color(self, c):
-        self.canvas.itemconfig(self.square, fill=self.hex_vals[c])
-        self.color_label.config(text=f"{c}: {self.hex_vals[c]}")
+        hex_val = self.hex_vals[c]
+        self.canvas.itemconfig(self.square, fill=hex_val)
+
+
+        self.canvas.itemconfig(self.hex_text, text=hex_val, fill="black")
+
         self.color_name = c
 
     def get_conf(self):
@@ -115,7 +122,6 @@ class ColorPicker:
             icon=messagebox.INFO,
         )
         
-       
         self.frame.destroy()
             
         if self.on_complete:

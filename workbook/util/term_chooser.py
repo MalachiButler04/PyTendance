@@ -1,28 +1,28 @@
-import tkinter as tk
-from tkinter import Tk, messagebox
+import ttkbootstrap as ttk
+from tkinter import messagebox
 import json
 
 class TermChooser:
-    def __init__(self, root: Tk, on_complete=None):
-        self.root = root
+    def __init__(self, on_complete=None):
         self.on_complete = on_complete
-        self.root.geometry("300x225")
 
-        self.term_entry = tk.StringVar(value=" Select Term ")
-        self.days_entry = tk.StringVar(value=" Select Days ")
+        self.term_entry = ttk.StringVar(value=" Select Term ")
+        self.days_entry = ttk.StringVar(value=" Select Days ")
         self.frame = None
 
-    def build_gui(self):
-        terms = ["Fall", "Spring"]
-        days = ["Monday, Wednesday", "Tuesday, Thursday"]
+    def build_gui(self, root):
+        self.root.geometry("300x225")
 
-        self.frame = tk.Frame(self.root)
+        terms = [" Select Term ", "Fall", "Spring"]
+        days = [" Select Days ", "Monday, Wednesday", "Tuesday, Thursday"]
+
+        self.frame = ttk.Frame(self.root)
         self.frame.place(anchor="center", relx=.5, rely=.5)
 
-        tk.OptionMenu(self.frame, self.term_entry, *terms).pack(padx=5, pady=5)
-        tk.OptionMenu(self.frame, self.days_entry, *days).pack(padx=5, pady=5)
+        ttk.OptionMenu(self.frame, self.term_entry, *terms).pack(padx=5, pady=5)
+        ttk.OptionMenu(self.frame, self.days_entry, *days).pack(padx=5, pady=5)
 
-        tk.Button(self.frame, text="Submit", command=self.config_info).pack(padx=5, pady=5)
+        ttk.Button(self.frame, text="Submit", command=self.config_info, bootstyle="secondary").pack(padx=5, pady=5)
 
     def config_info(self):
         if self.term_entry.get() == " Select Term " or self.days_entry.get() == " Select Days ":
@@ -56,10 +56,3 @@ class TermChooser:
 
         if self.on_complete:
             self.on_complete()
-
-
-if __name__ == "__main__":
-    root = Tk()
-    tc = TermChooser(root)
-    tc.build_gui()
-    root.mainloop()

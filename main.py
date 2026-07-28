@@ -1,58 +1,87 @@
-import tkinter as tk
+import ttkbootstrap as ttk
 from tkinter import Tk, filedialog, messagebox
 import json
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
-import pandas as pd 
-from attendance_tabloid import Tabloid
+from workbook.util.student_manager import StudentManager
+import pandas as pd
+from workbook.util.tabloid import Tabloid
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
+import os
 
 class Main:
-    def __init__(self, root: Tk):
+    def __init__(self, root: ttk.Window):
         self.root = root
         root.title("PyTendance")
         root.geometry("300x200")
         root.eval("tk::PlaceWindow . center")
         root.resizable(False, False)
+        root.theme_use("pydata-light")
 
         self.ref = None
+        self.manager_frame = None
+        self.prep_to_destroy = None
 
-        icon = tk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
+        icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
         root.iconphoto(True, icon)
 
-        property_label = tk.Label(root, text="Malachi A. Butler and Jacob T. Imbus", font=("Aptos", 5))
-        property_label.place(anchor="s", relx=.25, rely=.95)
+        property_label = ttk.Label(root, text="Malachi A. Butler and Jacob T. Imbus", font=("Aptos", 5))
+        property_label.place(anchor="s", relx=.25, rely=.90)
 
-        tk.Label(
+        ttk.Label(
             root,
-            text="Pytendance",
+            text="  PyTendance",
             font=("Helvetica", 15, "bold"),
-            border=1,
-            relief="ridge",
-            borderwidth=2,
-        ).pack(pady=10, ipadx=5, ipady=5)
+            bootstyle="primary-inverse"
+        ).pack(pady=(15, 10), ipadx=5, ipady=5)
 
-        self.button_frame: tk.Frame = tk.Frame(root)
-        self.button_frame.place(anchor="center", relx=.5, rely=.5)
+        self.button_frame: ttk.Frame = ttk.Frame(root)
+        self.button_frame.place(anchor="center", relx=.5, rely=.55)
 
-        create_new = tk.Button(self.button_frame, text="New Worksheet", command=lambda: self.init_workbook(), width=15)
+        create_new = ttk.Button(self.button_frame, text="New Worksheet", bootstyle="secondary", command=self.init_workbook, width=15)
         create_new.pack(pady=5)
 
-        edit_existing: tk.Button = tk.Button(self.button_frame, text="Edit Worksheet", command=lambda: print("edit works"), width=15)
+        edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
         edit_existing.pack(pady=5)
-
+    
+    def back_to_main(self):
+        conf = messagebox.askokcancel(title="Leaving so soon?", message="Would you like to return to the main menu?")
+        
+        if conf:            
+            self.manager_frame.destroy()
+            self.prep_to_destroy.destroy()
+            
+            self.button_frame: ttk.Frame = ttk.Frame(root)
+            self.button_frame.place(anchor="center", relx=.5, rely=.55)
+            
+            create_new = ttk.Button(self.button_frame, text="New Worksheet", bootstyle="secondary", command=self.init_workbook, width=15)
+            create_new.pack(pady=5)
+            
+            edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
+            edit_existing.pack(pady=5)
+        
     def on_exit_create(self) -> None:
-      
-        exit_prompt = messagebox.askyesno(title="Leaving so soon?" , message="Exiting now will reset your progress. Continue?", icon="warning")
+        exit_prompt = messagebox.askyesno(title="Leaving so soon?", message="Exiting now will reset your progress. Continue?", icon="warning")
 
         if exit_prompt:
             self.reset_json()
             self.root.destroy()
+            
+    def student_manager(self):
+        exists = os.path.exists("Attendance Tabloid.xlsx")
         
+        if exists:
+            self.button_frame.destroy()
+            sm = StudentManager(self.root)
+            self.manager_frame = sm.build_ui()
+            self.prep_to_destroy = ttk.Button(self.root, text="Back", command=self.back_to_main).place(rely=.7, relx=.5, anchor="center")
+        else:
+            messagebox.showerror(title="No workbook created!", message="There was an error locating your attendance sheet. Please try again or press 'Create New'")
+            
     def init_workbook(self) -> None:
         warning = messagebox.askokcancel(title="Warning", message="This action will erase any previous worksheet information. Continue?", icon="warning")
-        
-        if warning: 
+
+        if warning:
             self.reset_json()
             self.upload_roster()
 
@@ -93,7 +122,7 @@ class Main:
 
         with open(INFO_CONFIG, "w") as fw:
             json.dump(data, fw, indent=4)
-        
+
         if self.ref:
             try:
                 roster_df: pd.DataFrame = pd.read_csv(self.ref)
@@ -121,18 +150,17 @@ class Main:
 
                 for i in cleaned:
                     students.append(i)
-                
+
                 student_data["students"] = students
-                
+
             with open(STUDENT_CONFIG, "w") as fws:
                 json.dump(student_data, fws, indent=4)
 
-    
     def reset_json(self) -> None:
-        with open(INFO_CONFIG, "r") as fri , open(STUDENT_CONFIG, "r") as frs:
+        with open(INFO_CONFIG, "r") as fri, open(STUDENT_CONFIG, "r") as frs:
             data_info = json.load(fri)
             data_student = json.load(frs)
-        
+
         with open(INFO_CONFIG, "w") as fwi, open(STUDENT_CONFIG, "w") as fws:
             data_info["ref"] = ""
             data_info["color"] = ""
@@ -150,8 +178,8 @@ class Main:
         with open(INFO_CONFIG, "r") as fr:
             reader = json.load(fr)
             return reader["ref"] != ""
-        
+
 if __name__ == "__main__":
-    root = Tk()
+    root = ttk.Window()
     mn = Main(root)
     root.mainloop()
