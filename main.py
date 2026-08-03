@@ -1,5 +1,5 @@
 import ttkbootstrap as ttk
-from tkinter import Tk, filedialog, messagebox
+from tkinter import filedialog, messagebox
 import json
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
@@ -8,7 +8,13 @@ from workbook.util.tabloid import Tabloid
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
 import os
 
-def main_menu(frame: ttk.Frame, main_app: Main):
+
+def main_menu(frame: ttk.Frame | None = None, main_app: "Main" | None = None):
+    if main_app is None:
+        raise ValueError("main_app must be provided")
+    if frame is None:
+        frame = ttk.Frame(main_app.root)
+
     frame.place(anchor="center", relx=.5, rely=.55)
 
     create_new = ttk.Button(frame, text="New Worksheet", bootstyle="secondary", command=main_app.init_workbook, width=15)
@@ -28,6 +34,7 @@ class Main:
 
         self.ref = None
         self.manager_frame = None
+        self.valid_csv = False
 
         icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
         root.iconphoto(True, icon)
@@ -67,19 +74,32 @@ class Main:
         warning = messagebox.askokcancel(title="Warning", message="Any old data will be erased. Continue?", icon="warning")
 
         if warning:
+            self.valid_csv = False
             self.reset_json()
             self.upload_roster()
 
-            if self.has_ref():
+            if self.has_ref() and self.valid_csv:
                 self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
-                self.button_frame.destroy()
+                if self.button_frame is not None:
+                    self.button_frame.destroy()
+                self.button_frame = ttk.Frame(self.root)
+                main_menu(self.button_frame, self)
                 self.init_colorpicker()
             else:
-                messagebox.showerror(title="Error", message="Please select your Photo Roster to continue")
+                if self.button_frame is not None:
+                    self.button_frame.destroy()
+                self.button_frame = ttk.Frame(self.root)
+                main_menu(self.button_frame, self)
 
     def init_colorpicker(self) -> None:
-        self.cp = ColorPicker(self.root, on_complete=self.init_termpicker)
-        self.cp.build_gui()
+        if self.valid_csv:
+            self.cp = ColorPicker(self.root, on_complete=self.init_termpicker)
+            self.cp.build_gui()
+        else:
+            if self.button_frame is not None:
+                self.button_frame.destroy()
+            self.button_frame = ttk.Frame(self.root)
+            main_menu(self.button_frame, self)
 
     def init_termpicker(self) -> None:
         self.tc = TermChooser(self.root, on_complete=self.success_screen)
@@ -112,34 +132,25 @@ class Main:
             try:
                 roster_df: pd.DataFrame = pd.read_csv(self.ref)
                 cleaned = roster_df[roster_df["Sortable name"] != "Lu, Lingma"]["Sortable name"]
-            except FileNotFoundError:
-                messagebox.showerror(title="Error", message=f"Could not find file:\n{self.ref}")
+                self.valid_csv = True
+                
+            except (FileNotFoundError, pd.errors.ParserError, KeyError):
+                messagebox.showerror(title="Error", message="The selected file was not accepted. Please choose a valid Photo Roster.")
                 self.ref = None
-                return
-            except pd.errors.ParserError:
-                messagebox.showerror(title="Error", message="The selected file could not be read as a valid CSV.")
-                self.ref = None
-                return
-            except KeyError:
-                messagebox.showerror(
-                    title="Error",
-                    message='The selected CSV is missing a required "Sortable name" column.'
-                )
-                self.ref = None
-                return
+                
+            if self.valid_csv:
+                with open(STUDENT_CONFIG, "r") as frs:
+                    student_data = json.load(frs)
 
-            with open(STUDENT_CONFIG, "r") as frs:
-                student_data = json.load(frs)
+                    students = student_data["students"]
 
-                students = student_data["students"]
+                    for i in cleaned:
+                        students.append(i)
 
-                for i in cleaned:
-                    students.append(i)
+                    student_data["students"] = students
 
-                student_data["students"] = students
-
-            with open(STUDENT_CONFIG, "w") as fws:
-                json.dump(student_data, fws, indent=4)
+                with open(STUDENT_CONFIG, "w") as fws:
+                    json.dump(student_data, fws, indent=4)
 
     def reset_json(self) -> None:
         with open(INFO_CONFIG, "r") as fri, open(STUDENT_CONFIG, "r") as frs:

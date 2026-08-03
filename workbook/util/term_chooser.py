@@ -11,7 +11,7 @@ class TermChooser:
         self.days_entry = ttk.StringVar(value=" Select Days ")
         self.frame = None
 
-    def build_gui(self, root):
+    def build_gui(self):
         self.root.geometry("300x225")
 
         terms = [" Select Term ", "Fall", "Spring"]
