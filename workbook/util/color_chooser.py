@@ -2,6 +2,9 @@ import json
 import ttkbootstrap as ttk
 from tkinter import messagebox
 
+from config.path_config import INFO_CONFIG
+
+
 class ColorPicker:
     def __init__(self, root: ttk.Window, on_complete=None):
         self.root = root
@@ -106,14 +109,14 @@ class ColorPicker:
             return
 
         try:
-            with open("config/book_config.json", "r") as file:
+            with open(INFO_CONFIG, "r") as file:
                 data = json.load(file)
         except (FileNotFoundError, json.JSONDecodeError):
             data = {}
 
         data["color"] = self.hex_vals[self.color_name]
 
-        with open("config/book_config.json", "w") as file:
+        with open(INFO_CONFIG, "w") as file:
             json.dump(data, file, indent=4)
 
         messagebox.showinfo(
