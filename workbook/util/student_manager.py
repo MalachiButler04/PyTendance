@@ -7,7 +7,6 @@ from tkinter import StringVar, messagebox
 from config.path_config import STUDENT_CONFIG, TOTAL_WEEKS, WEEK_SHEET_PREFIX, WORKBOOK_FILENAME
 from workbook.util.tabloid import Tabloid
 
-
 class StudentManager:
     def __init__(self, root: ttk.Window):
         self.root = root
@@ -35,7 +34,6 @@ class StudentManager:
         else:
             return
 
-        self.current_frame.pack(fill="both", expand=True)
         self.button_frame = self.current_frame
 
     def main_frame(self) -> ttk.Frame:
@@ -102,8 +100,10 @@ class StudentManager:
             return frames, students, ref, color, days
 
         return None, None, None, None, None
-
-    def remove_student(self) -> None:
+    
+    def remove_student(self):
+        self.root.geometry("300x250")
+        self.button_frame.destroy()
         option_frame = ttk.Frame(self.root)
         self.current_page(option_frame)
 
@@ -114,21 +114,13 @@ class StudentManager:
         ops = ["Select Student", *self.STUDENTS]
         ttk.OptionMenu(option_frame, selected, *ops).pack(pady=10)
 
-        def get_conf() -> None:
-            if selected.get() == "Select Student":
-                messagebox.showwarning("No selection", "Please select a student to remove.")
-                return
-
+        def get_conf():
             conf = messagebox.askokcancel(message=f"Are you sure you would like to remove '{selected.get()}'?")
             if conf:
                 self.remove_helper(selected.get())
-
-        ttk.Button(option_frame, text="Submit", bootstyle="secondary", command=get_conf).pack(pady=5)
-        ttk.Button(option_frame, text="Back", bootstyle="secondary", command=self.to_main).pack(pady=5)
-
-    def remove_helper(self, student: str) -> None:
-        if student == "Select Student":
             return
+
+        student = selected.get()
 
         if student not in self.STUDENTS:
             return
@@ -154,7 +146,6 @@ class StudentManager:
         tab = Tabloid(skip_init=True)
         tab.rebuild_workbook()
         self.to_main()
-
 
 if __name__ == "__main__":
     root = ttk.Window()
