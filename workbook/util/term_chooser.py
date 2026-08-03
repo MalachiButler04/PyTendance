@@ -3,7 +3,8 @@ from tkinter import messagebox
 import json
 
 class TermChooser:
-    def __init__(self, on_complete=None):
+    def __init__(self, root: ttk.Window, on_complete=None):
+        self.root = root
         self.on_complete = on_complete
 
         self.term_entry = ttk.StringVar(value=" Select Term ")
