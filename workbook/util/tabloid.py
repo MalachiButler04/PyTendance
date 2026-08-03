@@ -4,14 +4,14 @@ import json
 import os
 from os import remove
 import pandas as pd
-from config.path_config import STUDENT_CONFIG, INFO_CONFIG
+from config.path_config import STUDENT_CONFIG, INFO_CONFIG, WORKBOOK_FILENAME, TOTAL_WEEKS, WEEK_SHEET_PREFIX, LAB_ATTENDANCE_DIVISOR
 
 
 class Tabloid:
     def __init__(self, skip_init: bool = False):
-        self.weeks = [f"Week {i}" for i in range(1, 16)]
+        self.weeks = [f"{WEEK_SHEET_PREFIX}{i}" for i in range(1, TOTAL_WEEKS + 1)]
         self.students = self.load_students()
-        self.wb = Workbook("Attendance Tabloid.xlsx")
+        self.wb = Workbook(WORKBOOK_FILENAME)
 
         self.ref, self.color, self.term, self.days = self.load_config()
 
@@ -31,7 +31,7 @@ class Tabloid:
     def init_workbook(self):
         self.results_page()
 
-        for i in range(15):
+        for i in range(TOTAL_WEEKS):
             self.week_sheet(i)
 
         self.attended_labs_page()
@@ -54,8 +54,9 @@ class Tabloid:
             max_width = max(len(student), max_width)
             sheet.set_column(0, 0, max_width)
 
-            sheet.write_formula(row, 1, f"=SUM('Week 1:Week 15'!H{row+1})", self.centered_vals)
-            sheet.write_formula(row, 2, f"=SUM('Week 1:Week 15'!H{row+1}) / 16", percent_format)
+            week_range = f"{WEEK_SHEET_PREFIX}1:{WEEK_SHEET_PREFIX}{TOTAL_WEEKS}"
+            sheet.write_formula(row, 1, f"=SUM('{week_range}'!H{row+1})", self.centered_vals)
+            sheet.write_formula(row, 2, f"=SUM('{week_range}'!H{row+1}) / {LAB_ATTENDANCE_DIVISOR}", percent_format)
 
     def results_page(self):
         sheet = self.wb.add_worksheet("Results")
@@ -75,8 +76,8 @@ class Tabloid:
             max_width = max(len(student), max_width)
             sheet.set_column(0, 0, max_width)
 
-            for i in range(1, 16):
-                sheet.write_formula(row, i, f"='Week {i}'!G{row+1}", self.centeredwborder)
+            for i in range(1, TOTAL_WEEKS + 1):
+                sheet.write_formula(row, i, f"='{WEEK_SHEET_PREFIX}{i}'!G{row+1}", self.centeredwborder)
 
             sheet.write_formula(row, 16, f"=SUM(B{row+1}:P{row+1})", self.centeredwborder)
 
@@ -176,7 +177,7 @@ class Tabloid:
             sheet.write_formula(row, 6, f"=COUNTIF(B{row+1}:E{row+1}, TRUE)", self.centered_vals)
             sheet.write_formula(row, 7, f"=COUNTIF(C{row+1}, TRUE)", self.centered_vals)
 
-            week_key = f"Week {week + 1}"
+            week_key = f"{WEEK_SHEET_PREFIX}{week + 1}"
             v1, v2, v3 = WEEK_FRAME[week_key].iloc[row - 1][[
                 f"{self.days[0]} Lecture",
                 f"{self.days[0]} Lab",
@@ -190,10 +191,10 @@ class Tabloid:
     def rebuild_workbook(self):
         from workbook.util.student_manager import StudentManager
 
-        if os.path.exists("Attendance Tabloid.xlsx"):
-            remove("Attendance Tabloid.xlsx")
+        if os.path.exists(WORKBOOK_FILENAME):
+            remove(WORKBOOK_FILENAME)
 
-        self.wb = Workbook("Attendance Tabloid.xlsx")
+        self.wb = Workbook(WORKBOOK_FILENAME)
         self.header_format = self.wb.add_format({
             "align": "center",
             "bold": True,
@@ -209,7 +210,7 @@ class Tabloid:
 
         self.results_page()
 
-        for i in range(15):
+        for i in range(TOTAL_WEEKS):
             self.week_sheet_with_data(i, WEEK_FRAME)
 
         self.attended_labs_page()

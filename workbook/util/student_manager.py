@@ -2,7 +2,7 @@ import pandas as pd
 import ttkbootstrap as ttk
 from tkinter import StringVar, messagebox
 import json
-from config.path_config import STUDENT_CONFIG
+from config.path_config import STUDENT_CONFIG, TOTAL_WEEKS, WEEK_SHEET_PREFIX, WORKBOOK_FILENAME
 from workbook.util.tabloid import Tabloid
 from main import main_menu
 
@@ -31,7 +31,10 @@ class StudentManager:
         students = Tabloid.load_students()
 
         if students and ref and color and days:
-            data_frames = [pd.read_excel("Attendance Tabloid.xlsx", sheet_name=f"Week {i}") for i in range(1, 16)]
+            data_frames = [
+                pd.read_excel(WORKBOOK_FILENAME, sheet_name=f"{WEEK_SHEET_PREFIX}{i}")
+                for i in range(1, TOTAL_WEEKS + 1)
+            ]
 
             lecture0 = f"{days[0]} Lecture"
             lab0 = f"{days[0]} Lab"
@@ -44,7 +47,7 @@ class StudentManager:
 
             frames = {}
             for index, frame in enumerate(data_frames, start=1):
-                frames[f"Week {index}"] = frame[["Names", lecture0, lab0, lecture1]]
+                frames[f"{WEEK_SHEET_PREFIX}{index}"] = frame[["Names", lecture0, lab0, lecture1]]
 
             return frames, students, ref, color, days
 
@@ -76,7 +79,7 @@ class StudentManager:
             frame.drop(frame[frame["Names"] == student].index, inplace=True)
             
         StudentManager.FRAMES = {
-            f"Week {i}": df[["Names", self._lecture0, self._lab0, self._lecture1]]
+            f"{WEEK_SHEET_PREFIX}{i}": df[["Names", self._lecture0, self._lab0, self._lecture1]]
             for i, df in enumerate(self._data_frames, start=1)
         }
         self.FRAMES = StudentManager.FRAMES

@@ -2,31 +2,36 @@ import ttkbootstrap as ttk
 from tkinter import messagebox
 import json
 
+from config.path_config import INFO_CONFIG
+
+DEFAULT_TERM_VALUE = " Select Term "
+DEFAULT_DAYS_VALUE = " Select Days "
+TERM_OPTIONS = (DEFAULT_TERM_VALUE, "Fall", "Spring")
+DAY_OPTIONS = (DEFAULT_DAYS_VALUE, "Monday, Wednesday", "Tuesday, Thursday")
+
+
 class TermChooser:
     def __init__(self, root: ttk.Window, on_complete=None):
         self.root = root
         self.on_complete = on_complete
 
-        self.term_entry = ttk.StringVar(value=" Select Term ")
-        self.days_entry = ttk.StringVar(value=" Select Days ")
+        self.term_entry = ttk.StringVar(value=DEFAULT_TERM_VALUE)
+        self.days_entry = ttk.StringVar(value=DEFAULT_DAYS_VALUE)
         self.frame = None
 
     def build_gui(self):
         self.root.geometry("300x225")
 
-        terms = [" Select Term ", "Fall", "Spring"]
-        days = [" Select Days ", "Monday, Wednesday", "Tuesday, Thursday"]
-
         self.frame = ttk.Frame(self.root)
         self.frame.place(anchor="center", relx=.5, rely=.5)
 
-        ttk.OptionMenu(self.frame, self.term_entry, *terms).pack(padx=5, pady=5)
-        ttk.OptionMenu(self.frame, self.days_entry, *days).pack(padx=5, pady=5)
+        ttk.OptionMenu(self.frame, self.term_entry, *TERM_OPTIONS).pack(padx=5, pady=5)
+        ttk.OptionMenu(self.frame, self.days_entry, *DAY_OPTIONS).pack(padx=5, pady=5)
 
         ttk.Button(self.frame, text="Submit", command=self.config_info, bootstyle="secondary").pack(padx=5, pady=5)
 
     def config_info(self):
-        if self.term_entry.get() == " Select Term " or self.days_entry.get() == " Select Days ":
+        if self.term_entry.get() == DEFAULT_TERM_VALUE or self.days_entry.get() == DEFAULT_DAYS_VALUE:
             messagebox.showerror(title="Invalid Option", message="Please select valid days and term")
             return
 
@@ -41,7 +46,7 @@ class TermChooser:
         days: list = self.days_entry.get().split(", ")
 
         try:
-            with open("config/book_config.json", "r") as fr:
+            with open(INFO_CONFIG, "r") as fr:
                 data = json.load(fr)
         except (FileNotFoundError, json.JSONDecodeError):
             data = {}
@@ -49,7 +54,7 @@ class TermChooser:
         data["term"] = term
         data["days"] = days
 
-        with open("config/book_config.json", "w") as fw:
+        with open(INFO_CONFIG, "w") as fw:
             json.dump(data, fw, indent=4)
 
       

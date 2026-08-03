@@ -5,7 +5,7 @@ from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
 import pandas as pd
 from workbook.util.tabloid import Tabloid
-from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
+from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR, WORKBOOK_FILENAME
 import os
 
 
@@ -61,7 +61,7 @@ class Main:
             
     def student_manager(self):
         from workbook.util.student_manager import StudentManager
-        exists = os.path.exists("Attendance Tabloid.xlsx")
+        exists = os.path.exists(WORKBOOK_FILENAME)
         
         if exists and all(Tabloid.load_config()):
             self.button_frame.destroy()
