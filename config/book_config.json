@@ -1,9 +1,9 @@
 {
     "ref": "C:/Users/butlemal/Downloads/PhotoRoster_2377751_2026-07-14.csv",
-    "color": "#e6b8af",
+    "color": "#cfe2f3",
     "term": "Fall",
     "days": [
-        "Tuesday",
-        "Thursday"
+        "Monday",
+        "Wednesday"
     ]
 }

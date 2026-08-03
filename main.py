@@ -24,7 +24,6 @@ def main_menu(frame: ttk.Frame | None = None, main_app: "Main" | None = None):
     edit_existing.pack(pady=5)
 
 class Main:
-<<<<<<< HEAD
     root = None
     instance = None
 
@@ -41,36 +40,16 @@ class Main:
         property_label = ttk.Label(root, text="Malachi A. Butler and Jacob T. Imbus", font=("Aptos", 5))
         property_label.place(anchor="s", relx=.25, rely=.90)
         
-=======
-    def __init__(self, root: ttk.Window):
-        self.root = root
-        root.title("PyTendance")
-        root.geometry("300x200")
-        root.eval("tk::PlaceWindow . center")
-        root.resizable(False, False)
-        root.theme_use("pydata-light")
-
->>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
         self.ref = None
         self.manager_frame = None
         self.valid_csv = False
 
-<<<<<<< HEAD
-=======
-        icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
-        root.iconphoto(True, icon)
-
-        property_label = ttk.Label(root, text="Malachi A. Butler and Jacob T. Imbus", font=("Aptos", 5))
-        property_label.place(anchor="s", relx=.25, rely=.90)
-
->>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
         ttk.Label(
             root,
             text="  PyTendance",
             font=("Helvetica", 15, "bold"),
             bootstyle="primary-inverse"
         ).pack(pady=(15, 10), ipadx=5, ipady=5)
-<<<<<<< HEAD
    
     def init_main(self, root):
         root.title("PyTendance")
@@ -91,11 +70,6 @@ class Main:
                                 
         edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.init_student_manager, width=15)
         edit_existing.pack(pady=5)       
-=======
-
-        self.button_frame: ttk.Frame = ttk.Frame(root)        
-        main_menu(self.button_frame, self)
->>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
         
     def on_exit_create(self) -> None:
         exit_prompt = messagebox.askyesno(title="Leaving so soon?", message="Exiting now will reset your progress. Continue?", icon="warning")
@@ -103,20 +77,16 @@ class Main:
         if exit_prompt:
             self.reset_json()
             self.root.destroy()
-<<<<<<< HEAD
             self.init_student_manager()
             
     def init_student_manager(self):
-=======
-            
-    def student_manager(self):
->>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
         from workbook.util.student_manager import StudentManager
         exists = os.path.exists(WORKBOOK_FILENAME)
         
         if exists and all(Tabloid.load_config()):
+            
+            sm = StudentManager(self.root)
             self.button_frame.destroy()
-<<<<<<< HEAD
                 
             self.button_frame = ttk.Frame(self.root)
             
@@ -126,10 +96,6 @@ class Main:
             ttk.Button(self.button_frame, text="Add Student", bootstyle="secondary", command=sm.add_student).grid(row=0, column=0, padx=5)
             ttk.Button(self.button_frame, text="Remove Student", bootstyle="secondary", command=sm.remove_student).grid(row=0, column=1, padx=5)
                     
-=======
-            sm = StudentManager(self.root)
-            self.manager_frame = sm.build_ui()
->>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
         else:
             messagebox.showerror(title="No Workbook Data Found", message="There was an error while loading your attendance sheet data. Please try again or press 'New Workbook'")
             
