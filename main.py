@@ -1,43 +1,38 @@
-import ttkbootstrap as ttk
-from tkinter import filedialog, messagebox
 import json
+import os
+from tkinter import filedialog, messagebox
+
+import pandas as pd
+import ttkbootstrap as ttk
+
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
-import pandas as pd
 from workbook.util.tabloid import Tabloid
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR, WORKBOOK_FILENAME
-import os
-
-
-def main_menu(frame: ttk.Frame | None = None, main_app: "Main" | None = None):
-    if main_app is None:
-        raise ValueError("main_app must be provided")
-    if frame is None:
-        frame = ttk.Frame(main_app.root)
-
-    frame.place(anchor="center", relx=.5, rely=.55)
-
-    create_new = ttk.Button(frame, text="New Worksheet", bootstyle="secondary", command=main_app.init_workbook, width=15)
-    create_new.pack(pady=5)
-
-    edit_existing: ttk.Button = ttk.Button(frame, text="Edit Worksheet", bootstyle="secondary", command=main_app.student_manager, width=15)
-    edit_existing.pack(pady=5)
 
 class Main:
-    def __init__(self, root: ttk.Window):
-        self.root = root
-        root.title("PyTendance")
-        root.geometry("300x200")
-        root.eval("tk::PlaceWindow . center")
-        root.resizable(False, False)
-        root.theme_use("pydata-light")
+    root = None
+    instance = None
+
+    def __init__(self, root: ttk.Window | None):
+        if root:
+            self.root = root
+            Main.root = root
+            Main.instance = self
+            
+            root.title("PyTendance")
+            root.geometry("300x200")
+            root.eval("tk::PlaceWindow . center")
+            root.resizable(False, False)
+            root.theme_use("pydata-light")
+            icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
+            root.iconphoto(True, icon)
+            self.button_frame: ttk.Frame = ttk.Frame(root)        
+            self.to_main(self.button_frame, True)
 
         self.ref = None
         self.manager_frame = None
         self.valid_csv = False
-
-        icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
-        root.iconphoto(True, icon)
 
         property_label = ttk.Label(root, text="Malachi A. Butler and Jacob T. Imbus", font=("Aptos", 5))
         property_label.place(anchor="s", relx=.25, rely=.90)
@@ -48,24 +43,45 @@ class Main:
             font=("Helvetica", 15, "bold"),
             bootstyle="primary-inverse"
         ).pack(pady=(15, 10), ipadx=5, ipady=5)
-
-        self.button_frame: ttk.Frame = ttk.Frame(root)        
-        main_menu(self.button_frame, self)
-        
+                
     def on_exit_create(self) -> None:
         exit_prompt = messagebox.askyesno(title="Leaving so soon?", message="Exiting now will reset your progress. Continue?", icon="warning")
 
         if exit_prompt:
             self.reset_json()
             self.root.destroy()
+
+    def to_main(self, frame: ttk.Frame = None, start_app = False):
+        if start_app:
+            frame.place(anchor="center", relx=.5, rely=.55)
+                        
+            create_new = ttk.Button(frame, text="New Worksheet", bootstyle="secondary", command=self.init_workbook, width=15)
+            create_new.pack(pady=5)
+                        
+            edit_existing: ttk.Button = ttk.Button(frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
+            edit_existing.pack(pady=5)
+            return
+    
+        else:
+            if frame and not start_app: 
+                frame.destroy()
+
+            frame.place(anchor="center", relx=.5, rely=.55)
             
+            create_new = ttk.Button(frame, text="New Worksheet", bootstyle="secondary", command=self.init_workbook, width=15)
+            create_new.pack(pady=5)
+            
+            edit_existing: ttk.Button = ttk.Button(frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
+            edit_existing.pack(pady=5)
+            
+        
     def student_manager(self):
         from workbook.util.student_manager import StudentManager
         exists = os.path.exists(WORKBOOK_FILENAME)
         
         if exists and all(Tabloid.load_config()):
-            self.button_frame.destroy()
             sm = StudentManager(self.root)
+            self.button_frame.destroy()
             self.manager_frame = sm.build_ui()
         else:
             messagebox.showerror(title="No Workbook Data Fount", message="There was an error while loading your attendance sheet data. Please try again or press 'New Workbook'")
@@ -87,7 +103,6 @@ class Main:
                 if self.button_frame is not None:
                     self.button_frame.destroy()
                 self.button_frame = ttk.Frame(self.root)
-                main_menu(self.button_frame, self)
 
     def init_colorpicker(self) -> None:
         if self.valid_csv:
@@ -97,7 +112,6 @@ class Main:
             if self.button_frame is not None:
                 self.button_frame.destroy()
             self.button_frame = ttk.Frame(self.root)
-            main_menu(self.button_frame, self)
 
     def init_termpicker(self) -> None:
         self.tc = TermChooser(self.root, on_complete=self.success_screen)
