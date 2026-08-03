@@ -4,8 +4,10 @@ from tkinter import StringVar, messagebox
 import json
 from config.path_config import STUDENT_CONFIG, TOTAL_WEEKS, WEEK_SHEET_PREFIX, WORKBOOK_FILENAME
 from workbook.util.tabloid import Tabloid
+from main import main_menu
 
 class StudentManager:
+
     def __init__(self, root: ttk.Window):
         self.root = root
         self.button_frame = None
@@ -45,8 +47,15 @@ class StudentManager:
         return None, None, None, None, None
     
     def remove_student(self):
+<<<<<<< HEAD
         if self.button_frame:
             self.button_frame.destroy()
+=======
+        self.root.geometry("300x250")
+        self.button_frame.destroy()
+        option_frame = ttk.Frame(self.root)
+        option_frame.place(relx=.5, rely=.5, anchor="center")
+>>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
 
         self.root.geometry("300x250")
 
@@ -63,6 +72,7 @@ class StudentManager:
         option_menu.pack(pady=5)
 
         def get_conf():
+<<<<<<< HEAD
             if selected.get() != "Select Student":
                 conf = messagebox.askokcancel(
                     message=f"Are you sure you would like to remove '{selected.get()}'?"
@@ -81,6 +91,14 @@ class StudentManager:
                     title="Invalid Selection",
                     message="Please select a student to continue!"
                 )
+=======
+            conf = messagebox.askokcancel(message=f"Are you sure you would like to remove '{selected.get()}'?")
+            if conf:
+                self.remove_helper(selected.get())
+            return
+
+        ttk.Button(option_frame, text="Submit", command=get_conf).pack(pady=(5, 0))
+>>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
 
         ttk.Button(parent_frame, text="Submit", bootstyle="danger", command=get_conf).pack(pady=(5, 0))
         ttk.Button(parent_frame, text="Back", bootstyle="secondary", command=lambda: self.back_to_edit(self.option_frame)).pack(pady=(5, 0))
@@ -121,4 +139,14 @@ class StudentManager:
             json.dump(data, sw, indent=4)
 
         tab = Tabloid(skip_init=True)
+<<<<<<< HEAD
         tab.rebuild_workbook()
+=======
+        tab.rebuild_workbook()
+
+
+if __name__ == "__main__":
+    root = ttk.Window()
+    sm = StudentManager(root)
+    root.mainloop()
+>>>>>>> 68e1fed783a963cd76194abce40d8d820af89f2e
