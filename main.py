@@ -3,11 +3,19 @@ from tkinter import Tk, filedialog, messagebox
 import json
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
-from workbook.util.student_manager import StudentManager
 import pandas as pd
 from workbook.util.tabloid import Tabloid
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR
 import os
+
+def main_menu(frame: ttk.Frame, main_app: Main):
+    frame.place(anchor="center", relx=.5, rely=.55)
+
+    create_new = ttk.Button(frame, text="New Worksheet", bootstyle="secondary", command=main_app.init_workbook, width=15)
+    create_new.pack(pady=5)
+
+    edit_existing: ttk.Button = ttk.Button(frame, text="Edit Worksheet", bootstyle="secondary", command=main_app.student_manager, width=15)
+    edit_existing.pack(pady=5)
 
 class Main:
     def __init__(self, root: ttk.Window):
@@ -34,30 +42,8 @@ class Main:
             bootstyle="primary-inverse"
         ).pack(pady=(15, 10), ipadx=5, ipady=5)
 
-        self.button_frame: ttk.Frame = ttk.Frame(root)
-        self.button_frame.place(anchor="center", relx=.5, rely=.55)
-
-        create_new = ttk.Button(self.button_frame, text="New Worksheet", bootstyle="secondary", command=self.init_workbook, width=15)
-        create_new.pack(pady=5)
-
-        edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
-        edit_existing.pack(pady=5)
-
-    def back_to_main(self):
-        conf = messagebox.askokcancel(title="Leaving so soon?", message="Would you like to return to the main menu?")
-        
-        if conf:            
-            self.manager_frame.destroy()
-            self.prep_to_destroy.destroy()
-            
-            self.button_frame: ttk.Frame = ttk.Frame(root)
-            self.button_frame.place(anchor="center", relx=.5, rely=.55)
-            
-            create_new = ttk.Button(self.button_frame, text="New Worksheet", bootstyle="secondary", command=self.init_workbook, width=15)
-            create_new.pack(pady=5)
-            
-            edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.student_manager, width=15)
-            edit_existing.pack(pady=5)
+        self.button_frame: ttk.Frame = ttk.Frame(root)        
+        main_menu(self.button_frame, self)
         
     def on_exit_create(self) -> None:
         exit_prompt = messagebox.askyesno(title="Leaving so soon?", message="Exiting now will reset your progress. Continue?", icon="warning")
@@ -67,17 +53,18 @@ class Main:
             self.root.destroy()
             
     def student_manager(self):
+        from workbook.util.student_manager import StudentManager
         exists = os.path.exists("Attendance Tabloid.xlsx")
         
-        if exists:
+        if exists and all(Tabloid.load_config()):
             self.button_frame.destroy()
             sm = StudentManager(self.root)
             self.manager_frame = sm.build_ui()
         else:
-            messagebox.showerror(title="No workbook created!", message="There was an error locating your attendance sheet. Please try again or press 'Create New'")
+            messagebox.showerror(title="No Workbook Data Fount", message="There was an error while loading your attendance sheet data. Please try again or press 'New Workbook'")
             
     def init_workbook(self) -> None:
-        warning = messagebox.askokcancel(title="Warning", message="This action will erase any previous worksheet information. Continue?", icon="warning")
+        warning = messagebox.askokcancel(title="Warning", message="Any old data will be erased. Continue?", icon="warning")
 
         if warning:
             self.reset_json()

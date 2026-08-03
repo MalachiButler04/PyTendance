@@ -4,30 +4,15 @@ from tkinter import StringVar, messagebox
 import json
 from config.path_config import STUDENT_CONFIG
 from workbook.util.tabloid import Tabloid
+from main import main_menu
 
 class StudentManager:
-    ref, color, _, days = Tabloid.load_config()
-    STUDENTS = Tabloid.load_students()
-
-    _data_frames = [pd.read_excel("Attendance Tabloid.xlsx", sheet_name=f"Week {i}") for i in range(1, 16)]
-
-    _lecture0 = f"{days[0]} Lecture"
-    _lab0 = f"{days[0]} Lab"
-    _lecture1 = f"{days[1]} Lecture"
-
-    FRAMES = {}
-    for _i, _df in enumerate(_data_frames, start=1):
-        FRAMES[f"Week {_i}"] = _df[["Names", _lecture0, _lab0, _lecture1]]
 
     def __init__(self, root: ttk.Window):
         self.root = root
-
-        self.days = self.__class__.days
-        self.color = self.__class__.color
         self.button_frame = None
 
-        self.FRAMES = StudentManager.FRAMES  # attr
-        self.STUDENTS = StudentManager.STUDENTS
+        self.FRAMES, self.STUDENTS, self.REF, self.COLOR, self.DAYS = self.init_data()
 
     def build_ui(self) -> ttk.Frame:
         self.button_frame = ttk.Frame(self.root)
@@ -41,6 +26,30 @@ class StudentManager:
     def add_student(self) -> ttk.Frame:
         ...
 
+    def init_data(self):
+        ref, color, _, days = Tabloid.load_config()
+        students = Tabloid.load_students()
+
+        if students and ref and color and days:
+            data_frames = [pd.read_excel("Attendance Tabloid.xlsx", sheet_name=f"Week {i}") for i in range(1, 16)]
+
+            lecture0 = f"{days[0]} Lecture"
+            lab0 = f"{days[0]} Lab"
+            lecture1 = f"{days[1]} Lecture"
+
+            self._data_frames = data_frames
+            self._lecture0 = lecture0
+            self._lab0 = lab0
+            self._lecture1 = lecture1
+
+            frames = {}
+            for index, frame in enumerate(data_frames, start=1):
+                frames[f"Week {index}"] = frame[["Names", lecture0, lab0, lecture1]]
+
+            return frames, students, ref, color, days
+
+        return None, None, None, None, None
+    
     def remove_student(self):
         self.root.geometry("300x250")
         self.button_frame.destroy()
