@@ -82,8 +82,6 @@ class Main:
                 self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
                 if self.button_frame is not None:
                     self.button_frame.destroy()
-                self.button_frame = ttk.Frame(self.root)
-                main_menu(self.button_frame, self)
                 self.init_colorpicker()
             else:
                 if self.button_frame is not None:
