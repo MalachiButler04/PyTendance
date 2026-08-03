@@ -11,15 +11,8 @@ class StudentManager:
         self.button_frame = None
 
         self.FRAMES, self.STUDENTS, self.REF, self.COLOR, self.DAYS = self.init_data()
-
-    def build_ui(self) -> ttk.Frame:
-        self.button_frame = ttk.Frame(self.root)
-        self.button_frame.place(relx=0.5, rely=0.5, anchor="center")
-    
-        ttk.Button(self.button_frame, text="Add Student", bootstyle="secondary", command=self.add_student).grid(row=0, column=0, padx=5)
-        ttk.Button(self.button_frame, text="Remove Student", bootstyle="secondary", command=self.remove_student).grid(row=0, column=1, padx=5)
         
-        return self.button_frame
+        self.option_frame = None
         
     def add_student(self) -> ttk.Frame:
         ...
@@ -52,34 +45,62 @@ class StudentManager:
         return None, None, None, None, None
     
     def remove_student(self):
-        from main import Main
-        self.button_frame.destroy()
-        
-        mn = Main(None)
-        
-        self.root.geometry("300x250")
-        self.button_frame.destroy()
-        option_frame = ttk.Frame(self.root)
-        option_frame.place(relx=.5, rely=.5, anchor="center")
+        if self.button_frame:
+            self.button_frame.destroy()
 
-        selected = ttk.StringVar(value="Select Student")
+        self.root.geometry("300x250")
+
+        self.option_frame = ttk.Frame(self.root)
+        self.option_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        self.build_student_dropdown(self.option_frame)
+
+    def build_student_dropdown(self, parent_frame: ttk.Frame):
+        selected = StringVar(value="Select Student")  # StringVar from tkinter
 
         ops = ["Select Student", *self.STUDENTS]
-        ttk.OptionMenu(option_frame, selected, *ops).pack()
+        option_menu = ttk.OptionMenu(parent_frame, selected, *ops)
+        option_menu.pack(pady=5)
 
         def get_conf():
             if selected.get() != "Select Student":
-                conf = messagebox.askokcancel(message=f"Are you sure you would like to remove '{selected.get()}'?")
+                conf = messagebox.askokcancel(
+                    message=f"Are you sure you would like to remove '{selected.get()}'?"
+                )
                 if conf:
                     self.remove_helper(selected.get())
-                    
-                    mn.to_main(option_frame)
-    
+                    self.STUDENTS = Tabloid.load_students() 
+                    self.refresh_dropdown(option_menu, selected)
+                    exit = messagebox.askyesno(title="Success!", message=f"'{selected.get()}' has been removed successfully! Would you like to exit?")
+                    if exit:
+                        self.root.destroy()
+
+                    selected.set("Select Student")
             else:
-                messagebox.showerror(title="Invalid Selection", message="Please select a student to continue!")
+                messagebox.showerror(
+                    title="Invalid Selection",
+                    message="Please select a student to continue!"
+                )
 
-        ttk.Button(option_frame, text="Submit", command=get_conf).pack(pady=(5, 0))
-
+        ttk.Button(parent_frame, text="Submit", bootstyle="danger", command=get_conf).pack(pady=(5, 0))
+        ttk.Button(parent_frame, text="Back", bootstyle="secondary", command=lambda: self.back_to_edit(self.option_frame)).pack(pady=(5, 0))
+        
+    def back_to_edit(self, prev: ttk.Frame):
+        prev.destroy()
+        self.root.geometry("300x200")
+        self.button_frame = ttk.Frame(self.root)
+                    
+        self.button_frame.place(relx=0.5, rely=0.5, anchor="center")
+        ttk.Button(self.button_frame, text="Add Student", bootstyle="secondary", command=self.add_student).grid(row=0, column=0, padx=5)
+        ttk.Button(self.button_frame, text="Remove Student", bootstyle="secondary", command=self.remove_student).grid(row=0, column=1, padx=5)
+        
+         
+    def refresh_dropdown(self, option_menu: ttk.OptionMenu, selected: StringVar):
+        menu = option_menu["menu"]
+        menu.delete(0, "end")
+        for student in self.STUDENTS:
+            menu.add_command(label=student, command=lambda s=student: selected.set(s))
+    
     def remove_helper(self, student: str):
         self.STUDENTS.remove(student)
 
@@ -101,8 +122,3 @@ class StudentManager:
 
         tab = Tabloid(skip_init=True)
         tab.rebuild_workbook()
-
-if __name__ == "__main__":
-    root = ttk.Window()
-    sm = StudentManager(root)
-    root.mainloop()
