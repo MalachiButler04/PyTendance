@@ -4,8 +4,10 @@ from tkinter import StringVar, messagebox
 import json
 from config.path_config import STUDENT_CONFIG, TOTAL_WEEKS, WEEK_SHEET_PREFIX, WORKBOOK_FILENAME
 from workbook.util.tabloid import Tabloid
+from main import main_menu
 
 class StudentManager:
+
     def __init__(self, root: ttk.Window):
         self.root = root
         self.button_frame = None
@@ -52,11 +54,6 @@ class StudentManager:
         return None, None, None, None, None
     
     def remove_student(self):
-        from main import Main
-        self.button_frame.destroy()
-        
-        mn = Main(None)
-        
         self.root.geometry("300x250")
         self.button_frame.destroy()
         option_frame = ttk.Frame(self.root)
@@ -68,15 +65,10 @@ class StudentManager:
         ttk.OptionMenu(option_frame, selected, *ops).pack()
 
         def get_conf():
-            if selected.get() != "Select Student":
-                conf = messagebox.askokcancel(message=f"Are you sure you would like to remove '{selected.get()}'?")
-                if conf:
-                    self.remove_helper(selected.get())
-                    
-                    mn.to_main(option_frame)
-    
-            else:
-                messagebox.showerror(title="Invalid Selection", message="Please select a student to continue!")
+            conf = messagebox.askokcancel(message=f"Are you sure you would like to remove '{selected.get()}'?")
+            if conf:
+                self.remove_helper(selected.get())
+            return
 
         ttk.Button(option_frame, text="Submit", command=get_conf).pack(pady=(5, 0))
 
@@ -101,6 +93,7 @@ class StudentManager:
 
         tab = Tabloid(skip_init=True)
         tab.rebuild_workbook()
+
 
 if __name__ == "__main__":
     root = ttk.Window()
