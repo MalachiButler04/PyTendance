@@ -77,7 +77,7 @@ class Main:
         ).pack(pady=5)
 
     def init_student_manager(self):
-        from student_manager import StudentManager
+        from workbook.util.student_manager import StudentManager
 
         exists = os.path.exists(WORKBOOK_FILENAME)
         if exists and all(Tabloid.load_config()) and Tabloid.load_students():
@@ -162,7 +162,6 @@ class Main:
 
         with open(INFO_CONFIG, "r") as fr:
             data = json.load(fr)
-
         self.ref = file_upload if file_upload != "" else None
         data["ref"] = file_upload
 
@@ -174,7 +173,6 @@ class Main:
                 roster_df: pd.DataFrame = pd.read_csv(self.ref)
                 cleaned = roster_df[roster_df["Sortable name"] != "Lu, Lingma"]["Sortable name"]
                 self.valid_csv = True
-
             except (FileNotFoundError, pd.errors.ParserError, KeyError):
                 messagebox.showerror(
                     title="Error",

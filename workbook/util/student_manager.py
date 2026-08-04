@@ -9,6 +9,7 @@ from config.path_config import (
     TOTAL_WEEKS,
     WEEK_SHEET_PREFIX,
     WORKBOOK_FILENAME,
+    INFO_CONFIG
 )
 from workbook.util.tabloid import Tabloid
 
@@ -109,9 +110,17 @@ class StudentManager:
                 title="Success!",
                 message="Student roster updated successfully."
             )
+            
+            with open(INFO_CONFIG, "r") as fr:
+                data = json.load(fr)
+                data["ref"] = new_ref
+            
+            with open(INFO_CONFIG, "w") as fw:
+                json.dump(data, fw, indent=4)
 
         except KeyError as e:
             print(e)
+            
         except Exception as e:
             messagebox.showerror(
                 title="Processing Error",
@@ -279,12 +288,3 @@ class StudentManager:
         tab.rebuild_workbook()
 
         self._reload_state()
-
-    def test(self):
-        print(self.STUDENTS)
-
-
-if __name__ == "__main__":
-    root = ttk.Window()
-    sm = StudentManager(root)
-    root.mainloop()

@@ -198,7 +198,7 @@ class Tabloid:
             sheet.insert_checkbox(row, 4, False)
 
     def rebuild_workbook(self):
-        from student_manager import StudentManager
+        from workbook.util.student_manager import StudentManager
 
         if os.path.exists(WORKBOOK_FILENAME):
             remove(WORKBOOK_FILENAME)
