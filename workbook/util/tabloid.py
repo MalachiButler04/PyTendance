@@ -148,7 +148,6 @@ class Tabloid:
                 sheet.insert_checkbox(row, i, False)
 
     def week_sheet_with_data(self, week: int, WEEK_FRAME):
-
         sheet = self.wb.add_worksheet(self.weeks[week])
         header = [
             "Names",
@@ -169,27 +168,37 @@ class Tabloid:
             width = len(text) * 1.1 if len(text) < 20 else len(text) * 1.2
             sheet.set_column(col, col, width)
 
-        max_width = len(self.students[0])
+        week_key = f"{WEEK_SHEET_PREFIX}{week + 1}"
+        week_df = WEEK_FRAME[week_key].copy()
+
+        if "Names" in week_df.columns:
+            week_df = week_df.set_index("Names")
+
+        max_width = len(self.students[0]) if self.students else 0
+
         for row, student in enumerate(self.students, start=1):
             sheet.write(row, 0, student)
-            max_width = max(len(student), max_width) * .98
+            max_width = max(len(student), max_width) * 0.98
             sheet.set_column(0, 0, max_width)
+
             sheet.write_formula(row, 6, f"=COUNTIF(B{row+1}:E{row+1}, TRUE)", self.centered_vals)
             sheet.write_formula(row, 7, f"=COUNTIF(C{row+1}, TRUE)", self.centered_vals)
 
-            week_key = f"{WEEK_SHEET_PREFIX}{week + 1}"
-            v1, v2, v3 = WEEK_FRAME[week_key].iloc[row - 1][[
-                f"{self.days[0]} Lecture",
-                f"{self.days[0]} Lab",
-                f"{self.days[1]} Lecture"
-            ]]
+            if student in week_df.index:
+                row_data = week_df.loc[student]
+                v1 = bool(row_data[f"{self.days[0]} Lecture"])
+                v2 = bool(row_data[f"{self.days[0]} Lab"])
+                v3 = bool(row_data[f"{self.days[1]} Lecture"])
+            else:
+                v1 = v2 = v3 = False
 
-            sheet.insert_checkbox(row, 1, bool(v1))
-            sheet.insert_checkbox(row, 2, bool(v2))
-            sheet.insert_checkbox(row, 3, bool(v3))
+            sheet.insert_checkbox(row, 1, v1)
+            sheet.insert_checkbox(row, 2, v2)
+            sheet.insert_checkbox(row, 3, v3)
+            sheet.insert_checkbox(row, 4, False)
 
     def rebuild_workbook(self):
-        from workbook.util.student_manager import StudentManager
+        from student_manager import StudentManager
 
         if os.path.exists(WORKBOOK_FILENAME):
             remove(WORKBOOK_FILENAME)

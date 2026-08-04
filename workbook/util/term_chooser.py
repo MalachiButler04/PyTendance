@@ -9,7 +9,6 @@ DEFAULT_DAYS_VALUE = " Select Days "
 TERM_OPTIONS = (DEFAULT_TERM_VALUE, "Fall", "Spring")
 DAY_OPTIONS = (DEFAULT_DAYS_VALUE, "Monday, Wednesday", "Tuesday, Thursday")
 
-
 class TermChooser:
     def __init__(self, root: ttk.Window, on_complete=None):
         self.root = root
