@@ -50,7 +50,8 @@ class Main:
             font=("Helvetica", 15, "bold"),
             bootstyle="primary-inverse"
         ).pack(pady=(15, 10), ipadx=5, ipady=5)
-   
+    
+    #MAIN MENU
     def init_main(self, root):
         root.title("PyTendance")
         self.button_frame = ttk.Frame(root)
@@ -69,16 +70,9 @@ class Main:
         create_new.pack(pady=5)
                                 
         edit_existing: ttk.Button = ttk.Button(self.button_frame, text="Edit Worksheet", bootstyle="secondary", command=self.init_student_manager, width=15)
-        edit_existing.pack(pady=5)       
-        
-    def on_exit_create(self) -> None:
-        exit_prompt = messagebox.askyesno(title="Leaving so soon?", message="Exiting now will reset your progress. Continue?", icon="warning")
-
-        if exit_prompt:
-            self.reset_json()
-            self.root.destroy()
-            self.init_student_manager()
-            
+        edit_existing.pack(pady=5)      
+    
+    #STUDENT MANAGER       
     def init_student_manager(self):
         from workbook.util.student_manager import StudentManager
         exists = os.path.exists(WORKBOOK_FILENAME)
@@ -98,7 +92,8 @@ class Main:
                     
         else:
             messagebox.showerror(title="No Workbook Data Found", message="There was an error while loading your attendance sheet data. Please try again or press 'New Workbook'")
-            
+    
+    #WORKBOOK LOGIC        
     def init_workbook(self) -> None:
         warning = messagebox.askokcancel(title="Warning", message="Any old data will be erased. Continue?", icon="warning")
 
@@ -178,7 +173,15 @@ class Main:
 
                 with open(STUDENT_CONFIG, "w") as fws:
                     json.dump(student_data, fws, indent=4)
+                    
+    #HELPERS
+    def on_exit_create(self) -> None:
+            exit_prompt = messagebox.askyesno(title="Leaving so soon?", message="Exiting now will reset your progress. Continue?", icon="warning")
 
+            if exit_prompt:
+                self.reset_json()
+                self.root.destroy()
+                self.init_student_manager()
     def reset_json(self) -> None:
         with open(INFO_CONFIG, "r") as fri, open(STUDENT_CONFIG, "r") as frs:
             data_info = json.load(fri)

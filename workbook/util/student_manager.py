@@ -4,7 +4,6 @@ from tkinter import StringVar, messagebox
 import json
 from config.path_config import STUDENT_CONFIG, TOTAL_WEEKS, WEEK_SHEET_PREFIX, WORKBOOK_FILENAME
 from workbook.util.tabloid import Tabloid
-from main import main_menu
 
 class StudentManager:
 
