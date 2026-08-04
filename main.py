@@ -80,8 +80,7 @@ class Main:
         from student_manager import StudentManager
 
         exists = os.path.exists(WORKBOOK_FILENAME)
-
-        if exists and all(Tabloid.load_config()):
+        if exists and all(Tabloid.load_config()) and Tabloid.load_students():
             sm = StudentManager(self.root)
 
             self._clear_button_frame()
