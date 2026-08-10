@@ -247,8 +247,10 @@ class Main:
         entry_frame.pack(padx=5, pady=5)
         ttk.Label(entry_frame, text="First Name: ").grid(row=0, column=1, pady=(0,5))
         ttk.Label(entry_frame, text="Last Name: ").grid(row=1, column=1)
+        
         firstname = ttk.Entry(entry_frame)
         firstname.grid(row=0, column=2, pady=(0,5)),
+        
         lastname = ttk.Entry(entry_frame)
         lastname.grid(row=1, column=2)
         
@@ -285,9 +287,7 @@ class Main:
     @staticmethod
     def has_name() -> bool:
         with open(INFO_CONFIG, "r") as fr:
-            reader = json.load(fr)
-            
-            print(reader["TA"] != "")
+            reader = json.load(fr)            
             return reader["TA"] != ""
 
 def get_name(): 

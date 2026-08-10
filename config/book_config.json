@@ -1,7 +1,10 @@
 {
-    "ref": "",
-    "color": "",
-    "term": "",
-    "days": [],
-    "TA": ""
+    "ref": "C:/Users/butlemal/Downloads/PhotoRoster_2377751_2026-07-14.csv",
+    "color": "#d9ead3",
+    "term": "Fall",
+    "days": [
+        "Tuesday",
+        "Thursday"
+    ],
+    "TA": "Butler, Malachi"
 }

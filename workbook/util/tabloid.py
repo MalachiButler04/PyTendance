@@ -230,7 +230,7 @@ class Tabloid:
 def load_students() -> list[str]:
     with open(STUDENT_CONFIG, "r") as fr:
         students = json.load(fr)["students"]
-        return [stud for stud in students if stud != Tabloid.TA]
+        return students
 
 def load_config():
     with open(INFO_CONFIG, "r") as fr:
