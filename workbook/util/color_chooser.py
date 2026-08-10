@@ -4,7 +4,6 @@ from tkinter import messagebox
 
 from config.path_config import INFO_CONFIG
 
-
 class ColorPicker:
     def __init__(self, root: ttk.Window, on_complete=None):
         self.root = root

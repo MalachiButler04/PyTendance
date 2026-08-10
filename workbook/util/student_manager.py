@@ -1,8 +1,9 @@
 import json
 import pandas as pd
 import ttkbootstrap as ttk
-
 from tkinter import StringVar, messagebox, filedialog
+
+from main import wb_closed, get_name
 
 from config.path_config import (
     STUDENT_CONFIG,
@@ -11,8 +12,7 @@ from config.path_config import (
     WORKBOOK_FILENAME,
     INFO_CONFIG
 )
-from workbook.util.tabloid import Tabloid
-
+from workbook.util.tabloid import Tabloid, load_config, load_students
 
 class StudentManager:
     
@@ -21,14 +21,15 @@ class StudentManager:
     REF = None
     COLOR = None 
     DAYS = None
+    TA = get_name()
     
     def __init__(self, root: ttk.Window):
         self.root = root
         self.button_frame = None
         self.option_frame = None
 
-        self.ref, self.color, _, self.days = Tabloid.load_config()
-        self.students = Tabloid.load_students()
+        self.ref, self.color, _, self.days = load_config()
+        self.students = load_students()
 
         self.FRAMES, self.STUDENTS, self.REF, self.COLOR, self.DAYS = self.init_data()
 
@@ -37,6 +38,7 @@ class StudentManager:
         StudentManager.REF = self.REF
         StudentManager.COLOR = self.COLOR
         StudentManager.DAYS = self.DAYS
+        StudentManager.TA = self.TA
 
     def _clear_frame(self, frame: ttk.Frame | None):
         if frame:
@@ -44,8 +46,8 @@ class StudentManager:
                 widget.destroy()
 
     def _reload_state(self):
-        self.ref, self.color, _, self.days = Tabloid.load_config()
-        self.students = Tabloid.load_students()
+        self.ref, self.color, _, self.days = load_config()
+        self.students = load_students()
         self.FRAMES, self.STUDENTS, self.REF, self.COLOR, self.DAYS = self.init_data()
         
         tab = Tabloid(skip_init=True)
@@ -53,6 +55,9 @@ class StudentManager:
 
 
     def add_student(self):
+        if not wb_closed():
+            return
+        
         self.root.geometry("300x200")
 
         new_ref: str = filedialog.askopenfilename(
@@ -79,7 +84,7 @@ class StudentManager:
 
             unique_new_students = [
                 stud for stud in normalized_new
-                if stud not in normalized_existing and stud != "Lu, Lingma"
+                if stud not in normalized_existing and stud not in ("Lu, Lingma", self.TA)
             ]
 
             if not unique_new_students:
@@ -152,6 +157,9 @@ class StudentManager:
         return None, None, None, None, None
 
     def remove_student(self):
+        if not wb_closed():
+            return
+                
         self.root.geometry("300x250")
 
         if self.button_frame:

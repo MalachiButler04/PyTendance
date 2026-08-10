@@ -6,7 +6,7 @@ import ttkbootstrap as ttk
 from tkinter import filedialog, messagebox
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
-from workbook.util.tabloid import Tabloid
+from workbook.util.tabloid import Tabloid, load_students, load_config
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR, WORKBOOK_FILENAME
 
 class Main:
@@ -27,19 +27,19 @@ class Main:
             Main.instance = self
             self.init_main(self.root)
 
-            property_label = ttk.Label(
-                root,
-                text="Malachi A. Butler and Jacob T. Imbus",
-                font=("Aptos", 5),
-            )
-            property_label.place(anchor="s", relx=.25, rely=.90)
+            self.property_label = ttk.Label(
+                    self.root,
+                    text="Malachi A. Butler and Jacob T. Imbus",
+                    font=("Aptos", 5),
+                )
+            self.property_label.place(anchor="s", relx=.5, rely=.97)
 
             ttk.Label(
                 root,
                 text="  PyTendance",
                 font=("Helvetica", 15, "bold"),
                 bootstyle="primary-inverse",
-            ).pack(pady=(15, 10), ipadx=5, ipady=5)
+                ).pack(pady=(15, 10), ipadx=5, ipady=5)
 
     def _clear_button_frame(self):
         if self.button_frame is not None:
@@ -80,7 +80,11 @@ class Main:
         from workbook.util.student_manager import StudentManager
 
         exists = os.path.exists(WORKBOOK_FILENAME)
-        if exists and all(Tabloid.load_config()) and Tabloid.load_students():
+
+        if not wb_closed():
+            return
+            
+        if exists and all(load_config()) and load_students():
             sm = StudentManager(self.root)
 
             self._clear_button_frame()
@@ -115,21 +119,27 @@ class Main:
         self.init_student_manager()
 
     def init_workbook(self) -> None:
+        
         warning = messagebox.askokcancel(
             title="Warning",
             message="Any old data will be erased. Continue?",
             icon="warning",
         )
-
+            
         if warning:
             self.valid_csv = False
             self.reset_json()
             self.upload_roster()
-
+                
             if self.has_ref() and self.valid_csv:
                 self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
                 self._clear_button_frame()
-                self.init_colorpicker()
+                
+                if self.has_name():
+                    self.init_colorpicker()
+                else:
+                    self.get_name(self.init_colorpicker)
+                    
             else:
                 self._clear_button_frame()
                 self.button_frame = ttk.Frame(self.root)
@@ -222,14 +232,86 @@ class Main:
             json.dump(data_info, fwi, indent=4)
             json.dump(data_student, fws, indent=4)
 
+    def get_name(self, on_complete=None):
+        self._clear_button_frame()
+        self.root.geometry("300x250")
+        
+        master_frame = ttk.Frame(self.root)
+        master_frame.pack(fill="both", expand=True)
+        
+        lbl_frame = ttk.Frame(master_frame)
+        lbl_frame.pack(padx=5, pady=5)
+        ttk.Label(lbl_frame, text=" Enter your name", font=("Helvetica", 10, "bold")).pack(padx=5, pady=5)
+        
+        entry_frame = ttk.Frame(master_frame)
+        entry_frame.pack(padx=5, pady=5)
+        ttk.Label(entry_frame, text="First Name: ").grid(row=0, column=1, pady=(0,5))
+        ttk.Label(entry_frame, text="Last Name: ").grid(row=1, column=1)
+        firstname = ttk.Entry(entry_frame)
+        firstname.grid(row=0, column=2, pady=(0,5)),
+        lastname = ttk.Entry(entry_frame)
+        lastname.grid(row=1, column=2)
+        
+        button_frame = ttk.Frame(master_frame)
+        button_frame.pack(padx=5, pady=(5, 0))
+        
+        self.property_label.lift()
+        
+        def add_ta():
+            students = load_students()
+            full_name = ", ".join((lastname.get().strip(), firstname.get().strip())).title()
+            
+            if full_name in students:
+                with open(INFO_CONFIG, "r") as fr:
+                    data = json.load(fr)
+                data["TA"] = full_name
+                    
+                with open(INFO_CONFIG, "w") as fw:
+                    json.dump(data, fw, indent=4)
+
+                if on_complete:
+                    master_frame.destroy()
+                    on_complete()
+            else:
+                messagebox.showerror(message="TA does not exist inside of your uploaded roster. Please reupload and try again!")
+        ttk.Button(button_frame, text="Submit", bootstyle="secondary", command=add_ta).pack()
+            
     @staticmethod
     def has_ref() -> bool:
         with open(INFO_CONFIG, "r") as fr:
             reader = json.load(fr)
             return reader["ref"] != ""
+        
+    @staticmethod
+    def has_name() -> bool:
+        with open(INFO_CONFIG, "r") as fr:
+            reader = json.load(fr)
+            
+            print(reader["TA"] != "")
+            return reader["TA"] != ""
 
-
+def get_name(): 
+    with open(INFO_CONFIG, "r") as fr:
+        reader = json.load(fr)
+        return reader["TA"]
+    
+def wb_closed() -> bool:
+        try:
+            with open(WORKBOOK_FILENAME, "r+b") as fr:
+                ...
+            
+            return True
+        
+        except PermissionError:
+            messagebox.showerror(title="Excel Sheet Open", 
+                                 message="It appears you are still working in your attendance sheet. "
+                                            "Please save it, close it, and try again.")
+            return False
+            
 if __name__ == "__main__":
-    root = ttk.Window()
-    mn = Main(root)
-    root.mainloop()
+    try:
+        root = ttk.Window()
+        mn = Main(root)
+        root.mainloop()
+    except KeyboardInterrupt as e:
+        messagebox.showerror(title="PyTendance stopped responding", message="PyTendance has stopped responding, please reload the app and try again")

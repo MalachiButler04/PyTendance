@@ -3,18 +3,20 @@ from xlsxwriter import Workbook
 import json
 import os
 from os import remove
-import pandas as pd
 from config.path_config import STUDENT_CONFIG, INFO_CONFIG, WORKBOOK_FILENAME, TOTAL_WEEKS, WEEK_SHEET_PREFIX, LAB_ATTENDANCE_DIVISOR
 
-
 class Tabloid:
+    TA = None
+    
     def __init__(self, skip_init: bool = False):
         self.weeks = [f"{WEEK_SHEET_PREFIX}{i}" for i in range(1, TOTAL_WEEKS + 1)]
-        self.students = self.load_students()
+        self.students = load_students()
         self.wb = Workbook(WORKBOOK_FILENAME)
+        
+        self.ref, self.color, self.term, self.days, self.ta = load_config()
 
-        self.ref, self.color, self.term, self.days = self.load_config()
-
+        Tabloid.ta = self.ta
+        
         self.header_format = self.wb.add_format({
             "align": "center",
             "bold": True,
@@ -213,7 +215,7 @@ class Tabloid:
         self.centered_vals = self.wb.add_format({"align": "center"})
         self.centeredwborder = self.wb.add_format({"align": "center", "border": 1})
 
-        self.students = self.load_students()
+        self.students = load_students()
 
         WEEK_FRAME = StudentManager.FRAMES
 
@@ -225,13 +227,12 @@ class Tabloid:
         self.attended_labs_page()
         self.wb.close()
 
-    @staticmethod
-    def load_students() -> list[str]:
-        with open(STUDENT_CONFIG, "r") as fr:
-            return json.load(fr)["students"]
+def load_students() -> list[str]:
+    with open(STUDENT_CONFIG, "r") as fr:
+        students = json.load(fr)["students"]
+        return [stud for stud in students if stud != Tabloid.TA]
 
-    @staticmethod
-    def load_config():
-        with open(INFO_CONFIG, "r") as fr:
-            data = json.load(fr)
-            return data["ref"], data["color"], data["term"], data["days"]
+def load_config():
+    with open(INFO_CONFIG, "r") as fr:
+        data = json.load(fr)
+        return data["ref"], data["color"], data["term"], data["days"], data["TA"]       
