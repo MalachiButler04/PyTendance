@@ -35,6 +35,10 @@ The project is organized around three main areas:
 - [workbook/util/color_chooser.py](workbook/util/color_chooser.py) — theme selection UI
 - [workbook/util/term_chooser.py](workbook/util/term_chooser.py) — term and meeting-day selection UI
 
+### Packaging
+
+- [PyTendance.spec](PyTendance.spec) — PyInstaller spec used to build the standalone executable
+
 ## Architecture Summary
 
 ### Runtime flow
@@ -415,7 +419,25 @@ The application currently depends on:
 - xlsxwriter
 - openpyxl for Excel file reading through pandas
 
+Building a standalone executable additionally requires PyInstaller (see [Packaging](#packaging) below). It is not needed to run the app from source.
+
 If dependencies change, update both [README.md](README.md) and any setup instructions that mention installation.
+
+## Packaging
+
+PyTendance is packaged into a standalone executable with PyInstaller, driven by [PyTendance.spec](PyTendance.spec).
+
+- `PyTendance.spec` defines the entry point (`main.py`), bundled data files (`assets/`, `config/book_config.json`, `config/students_config.json`, `config/config_docs.md`), and the app icon (`assets/app_icon.ico`).
+- Build with `python -m PyInstaller PyTendance.spec`, run from the project root, since the paths in `PyTendance.spec` are relative to the project root.
+- Build output goes to `dist/PyTendance/` (both `build/` and `dist/` are gitignored, along with `*.zip`).
+
+Edit `PyTendance.spec` when changing:
+
+- which files are bundled into the executable (the `datas` list)
+- the app icon used for the built executable
+- the output executable name
+
+If you add a new file that the app reads at runtime (for example a new default config file), add it to the `datas` list in `PyTendance.spec` so it is present in the packaged build.
 
 ## Documentation Maintenance
 
@@ -424,6 +446,7 @@ When project behavior changes, update the most relevant documentation page first
 - user-facing installation or usage changes go in [README.md](README.md)
 - config storage or runtime state changes go in [config/config_docs.md](config/config_docs.md)
 - workbook generation or editing changes go in [workbook/util/workbook_util_docs.md](workbook/util/workbook_util_docs.md)
+- packaging or build changes go in the [Packaging](#packaging) section of this document and, if user-facing, in [README.md](README.md)
 
 If a change spans multiple areas, update all affected docs together so the project stays easy to maintain.
 

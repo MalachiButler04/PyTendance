@@ -20,6 +20,8 @@ PyTendance is a desktop application for creating and editing attendance workbook
 - ttkbootstrap
 - xlsxwriter
 
+PyInstaller is an additional requirement only if you want to build a standalone executable (see [Building a standalone executable](#building-a-standalone-executable)).
+
 ## Installation
 
 1. Clone or download this project.
@@ -95,7 +97,26 @@ main.py
 config/
 workbook/
 assets/
+PyTendance.spec
 ```
+
+## Building a standalone executable
+
+PyTendance can be packaged into a standalone executable with [PyInstaller](https://pyinstaller.org/), using the included [PyTendance.spec](PyTendance.spec) file.
+
+1. Install PyInstaller:
+
+```bash
+pip install pyinstaller
+```
+
+2. From the project root, run:
+
+```bash
+python -m PyInstaller PyTendance.spec
+```
+
+The build output is written to `dist/PyTendance/`, bundling the app alongside `assets/` and the default `config/` files referenced in `PyTendance.spec`.
 
 ## Notes
 
