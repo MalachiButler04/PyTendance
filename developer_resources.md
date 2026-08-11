@@ -40,16 +40,17 @@ The project is organized around three main areas:
 ### Runtime flow
 
 1. The user starts the app from `main.py`.
-2. The app loads or resets data in the config folder.
+2. The app loads or resets data in the config folder (the recorded TA name is preserved across resets).
 3. The user imports a roster CSV.
-4. The user chooses a color theme.
-5. The user chooses the term and meeting days.
-6. `Tabloid` creates the workbook.
-7. If the workbook already exists, `StudentManager` can add or remove students and then rebuild the workbook.
+4. If no TA name is recorded yet, the user enters one and it is validated against the imported roster.
+5. The user chooses a color theme.
+6. The user chooses the term and meeting days.
+7. `Tabloid` creates the workbook.
+8. If the workbook already exists, `StudentManager` can add or remove students (excluding the TA from that list) and then rebuild the workbook. Both actions first confirm the workbook file isn't open elsewhere via `wb_closed()`.
 
 ### Source of truth
 
-- `book_config.json` stores workbook settings such as roster path, color, term, and days.
+- `book_config.json` stores workbook settings such as roster path, color, term, days, and the recorded TA name.
 - `students_config.json` stores the active student list.
 - `path_config.py` stores shared constants for file names and sheet naming.
 
@@ -107,6 +108,14 @@ Edit `Main.upload_roster()` when changing:
 - roster validation behavior
 - the way imported names are written into config
 
+Edit `Main.get_name()` when changing:
+
+- the TA name entry screen shown after roster upload
+- validation that the entered TA name exists in the imported roster
+- how the TA name is written to `book_config.json`
+
+Edit `Main.has_name()` when changing whether a recorded TA name causes the TA entry screen to be skipped.
+
 Edit `ColorPicker.build_gui()` when changing:
 
 - the color preview box
@@ -150,7 +159,13 @@ The actions that clear state or warn the user before leaving are in [main.py](ma
 
 Edit `Main.on_exit_create()` when changing the exit confirmation dialog shown during workbook creation.
 
-Edit `Main.reset_json()` when changing how the application clears saved config values.
+Edit `Main.reset_json()` when changing how the application clears saved config values. Note that this method intentionally does not clear the `TA` field, so the recorded TA name survives a reset.
+
+### Workbook file lock check
+
+`wb_closed()` in [main.py](main.py) checks whether `Attendance Tabloid.xlsx` can be opened for writing, and shows an error if it's currently open in another program (such as Excel). It is called before entering the edit-mode menu and before `StudentManager.add_student()` / `StudentManager.remove_student()` run.
+
+Edit `wb_closed()` when changing this file-lock check or its error message.
 
 ### Where to look for common UI changes
 
@@ -160,6 +175,7 @@ Edit `Main.reset_json()` when changing how the application clears saved config v
 | Credit label on the main window       | [main.py](main.py)                                                   | `Main.__init__()`                                                 |
 | New workbook warning dialog           | [main.py](main.py)                                                   | `Main.init_workbook()`                                            |
 | Roster file picker                    | [main.py](main.py)                                                   | `Main.upload_roster()`                                            |
+| TA name entry screen                  | [main.py](main.py)                                                   | `Main.get_name()`                                                  |
 | Theme color screen                    | [workbook/util/color_chooser.py](workbook/util/color_chooser.py)     | `ColorPicker.build_gui()`                                         |
 | Color options                         | [workbook/util/color_chooser.py](workbook/util/color_chooser.py)     | `ColorPicker.hex_vals`                                            |
 | Term and day selection screen         | [workbook/util/term_chooser.py](workbook/util/term_chooser.py)       | `TermChooser.build_gui()`                                         |
@@ -385,6 +401,7 @@ The project currently expects:
 - title-cased student names in the stored roster list
 - `Lu, Lingma` to be excluded during import
 - exactly two meeting days selected for each workbook setup
+- a recorded `TA` name that matches an existing student, which is excluded from `StudentManager`'s add/remove lists but still appears as a normal student row in the workbook
 
 Any change to these assumptions should be reflected in the docs and in the workbook logic.
 

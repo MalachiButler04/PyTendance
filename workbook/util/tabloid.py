@@ -6,8 +6,8 @@ from os import remove
 from config.path_config import STUDENT_CONFIG, INFO_CONFIG, WORKBOOK_FILENAME, TOTAL_WEEKS, WEEK_SHEET_PREFIX, LAB_ATTENDANCE_DIVISOR
 
 class Tabloid:
+
     TA = None
-    
     def __init__(self, skip_init: bool = False):
         self.weeks = [f"{WEEK_SHEET_PREFIX}{i}" for i in range(1, TOTAL_WEEKS + 1)]
         self.students = load_students()
@@ -15,7 +15,7 @@ class Tabloid:
         
         self.ref, self.color, self.term, self.days, self.ta = load_config()
 
-        Tabloid.ta = self.ta
+        Tabloid.TA = self.ta
         
         self.header_format = self.wb.add_format({
             "align": "center",
@@ -229,8 +229,7 @@ class Tabloid:
 
 def load_students() -> list[str]:
     with open(STUDENT_CONFIG, "r") as fr:
-        students = json.load(fr)["students"]
-        return students
+        return json.load(fr)["students"]
 
 def load_config():
     with open(INFO_CONFIG, "r") as fr:

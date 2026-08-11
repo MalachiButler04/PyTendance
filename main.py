@@ -9,6 +9,12 @@ from workbook.util.term_chooser import TermChooser
 from workbook.util.tabloid import Tabloid, load_students, load_config
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR, WORKBOOK_FILENAME
 
+def get_name(): 
+    with open(INFO_CONFIG, "r") as fr:
+        reader = json.load(fr)
+
+        return str(reader["TA"])
+    
 class Main:
     root = None
     instance = None
@@ -32,6 +38,9 @@ class Main:
                     text="Malachi A. Butler and Jacob T. Imbus",
                     font=("Aptos", 5),
                 )
+
+            self.ta = get_name()
+
             self.property_label.place(anchor="s", relx=.5, rely=.97)
 
             ttk.Label(
@@ -51,7 +60,6 @@ class Main:
         root.geometry("300x200")
         root.eval("tk::PlaceWindow . center")
         root.resizable(False, False)
-        root.theme_use("pydata-light")
 
         icon = ttk.PhotoImage(file=str(BASE_DIR / "assets" / "492snake_100855.png"))
         root.iconphoto(True, icon)
@@ -138,7 +146,7 @@ class Main:
                 if self.has_name():
                     self.init_colorpicker()
                 else:
-                    self.get_name(self.init_colorpicker)
+                    self.init_get_name(self.init_colorpicker)
                     
             else:
                 self._clear_button_frame()
@@ -181,7 +189,7 @@ class Main:
         if self.ref:
             try:
                 roster_df: pd.DataFrame = pd.read_csv(self.ref)
-                cleaned = roster_df[roster_df["Sortable name"] != "Lu, Lingma"]["Sortable name"]
+                cleaned = roster_df[~roster_df["Sortable name"].isin(("Lu, Lingma", self.ta))]["Sortable name"]
                 self.valid_csv = True
             except (FileNotFoundError, pd.errors.ParserError, KeyError):
                 messagebox.showerror(
@@ -232,7 +240,7 @@ class Main:
             json.dump(data_info, fwi, indent=4)
             json.dump(data_student, fws, indent=4)
 
-    def get_name(self, on_complete=None):
+    def init_get_name(self, on_complete=None):
         self._clear_button_frame()
         self.root.geometry("300x250")
         
@@ -289,11 +297,6 @@ class Main:
         with open(INFO_CONFIG, "r") as fr:
             reader = json.load(fr)            
             return reader["TA"] != ""
-
-def get_name(): 
-    with open(INFO_CONFIG, "r") as fr:
-        reader = json.load(fr)
-        return reader["TA"]
     
 def wb_closed() -> bool:
         try:

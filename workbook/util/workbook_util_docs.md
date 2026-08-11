@@ -52,7 +52,7 @@ The workbook workflow follows this general sequence:
 - `self.weeks`: list of workbook sheet names such as `Week 1`, `Week 2`, and so on
 - `self.students`: current student list loaded from config
 - `self.wb`: active `xlsxwriter.Workbook` instance
-- `self.ref`, `self.color`, `self.term`, `self.days`: workbook settings loaded from configuration
+- `self.ref`, `self.color`, `self.term`, `self.days`, `self.ta`: workbook settings loaded from configuration, including the recorded TA name
 - `self.header_format`: formatted header style used across sheets
 - `self.centered_vals`: centered cell format without borders
 - `self.centeredwborder`: centered cell format with borders
@@ -132,7 +132,7 @@ Reads the student list from `config/students_config.json`.
 
 ##### `load_config()`
 
-Reads the workbook configuration from `config/book_config.json`.
+Reads the workbook configuration from `config/book_config.json` and returns `(ref, color, term, days, TA)`.
 
 ### Workbook sheet output
 
@@ -176,33 +176,41 @@ This class provides the add and remove student workflows for the edit mode of th
 
 #### Important attributes
 
-- `self.students`: current roster list
+- `self.students`: current roster list, with the TA filtered out
 - `self.ref`: source CSV path stored in config
 - `self.color`: theme color stored in config
 - `self.days`: class meeting days stored in config
+- `self.TA`: the recorded TA name loaded from `book_config.json`
 - `self.FRAMES`: in-memory copy of week sheet data
-- `self.STUDENTS`: shared student list used during edit actions
+- `self.STUDENTS`: shared student list used during edit actions, also excluding the TA
 
 #### Methods
 
+##### `_load_students()`
+
+Loads the student list from `config/students_config.json` and removes the recorded TA name, if present, so the TA never appears in the Add/Remove Student screens.
+
 ##### `_reload_state()`
 
-Reloads the stored configuration and rebuilds the workbook.
+Reloads the stored configuration (including `TA`) and rebuilds the workbook.
 
 ##### `add_student()`
 
 Imports a new roster CSV, validates that it contains a `Sortable name` column, and adds only students that are not already present.
 
+Before this runs, `wb_closed()` (defined in `main.py`) checks that the generated workbook file is not currently open elsewhere; if it is, the operation is aborted with an error message.
+
 Important behavior:
 
 - Ignores duplicate names
 - Ignores `Lu, Lingma`
+- Ignores the recorded TA name (`self.TA`), so the TA is never added as a duplicate student row
 - Updates `students_config.json`
 - Refreshes the workbook after changes are saved
 
 ##### `remove_student()`
 
-Shows the remove-student interface and lets the user select a student to delete.
+Shows the remove-student interface and lets the user select a student to delete. Like `add_student()`, it first checks `wb_closed()` and aborts with an error if the workbook file is currently open elsewhere. Because the roster shown here comes from `self.STUDENTS`, the TA never appears as a removable option.
 
 ##### `build_student_dropdown(parent_frame)`
 
@@ -328,6 +336,7 @@ Stores workbook metadata:
 - `color`: selected theme hex value
 - `term`: selected term
 - `days`: selected class days
+- `TA`: the recorded TA name; persists across new-workbook resets and is used to hide the TA from `StudentManager`'s Add/Remove screens
 
 ### `students_config.json`
 
@@ -342,6 +351,7 @@ The workbook folder relies on several important assumptions:
 - The roster CSV must contain a column named `Sortable name`
 - Student names are normalized and title-cased before being stored
 - `Lu, Lingma` is intentionally excluded when importing roster data
+- The recorded TA name is excluded from `StudentManager`'s add/remove screens, but not from the roster used to build the workbook itself
 - The workbook expects a valid existing config state when editing students
 
 ## Error Handling
@@ -353,6 +363,7 @@ The workbook code includes basic protection against invalid input:
 - Empty selections in the color and term screens
 - Removing a student without selecting one first
 - Attempting to edit workbook data when no workbook exists
+- Attempting to add or remove a student while the workbook file is open in another program (`wb_closed()` in `main.py`)
 
 Most errors are reported through message boxes so the user can correct the issue in the GUI.
 
