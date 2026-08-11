@@ -3,10 +3,11 @@ import json
 import pandas as pd
 import ttkbootstrap as ttk
 
+from pathlib import Path
 from tkinter import filedialog, messagebox
 from workbook.util.color_chooser import ColorPicker
 from workbook.util.term_chooser import TermChooser
-from workbook.util.tabloid import Tabloid, load_students, load_config
+from workbook.util.tabloid import Tabloid, load_students, load_config, resolve_workbook_path
 from config.path_config import INFO_CONFIG, STUDENT_CONFIG, BASE_DIR, WORKBOOK_FILENAME
 
 def get_name(): 
@@ -27,6 +28,7 @@ class Main:
         self.valid_csv = False
         self.cp = None
         self.tc = None
+        self.old_workbook_path = None
 
         if root:
             Main.root = root
@@ -87,7 +89,7 @@ class Main:
     def init_student_manager(self):
         from workbook.util.student_manager import StudentManager
 
-        exists = os.path.exists(WORKBOOK_FILENAME)
+        exists = os.path.exists(resolve_workbook_path())
 
         if not wb_closed():
             return
@@ -136,10 +138,19 @@ class Main:
             
         if warning:
             self.valid_csv = False
+
+            _, _, _, _, _, old_book_name, old_book_ref = load_config()
+            self.old_workbook_path = (
+                str(Path(old_book_ref) / old_book_name)
+                if old_book_ref and old_book_name
+                else None
+            )
+
             self.reset_json()
-            self.upload_roster()
-                
-            if self.has_ref() and self.valid_csv:
+
+            has_uploaded = self.upload_roster()
+
+            if self.has_ref() and self.valid_csv and has_uploaded:
                 self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
                 self._clear_button_frame()
                 
@@ -148,9 +159,6 @@ class Main:
                 else:
                     self.init_get_name(self.init_colorpicker)
                     
-            else:
-                self._clear_button_frame()
-                self.button_frame = ttk.Frame(self.root)
 
     def init_colorpicker(self) -> None:
         if self.valid_csv:
@@ -166,11 +174,35 @@ class Main:
 
     def success_screen(self) -> None:
         self.root.destroy()
-        Tabloid()
+
+        dict_loc = filedialog.askdirectory(title="Choose Location")
+        if not dict_loc:
+            dict_loc = str(BASE_DIR)
+
+        dest = Path(dict_loc) / WORKBOOK_FILENAME
+
+        Tabloid(output_path=str(dest))
+
+        if self.old_workbook_path:
+            old_path = Path(self.old_workbook_path)
+            if old_path.exists() and old_path.resolve() != dest.resolve():
+                os.remove(old_path)
+
+        with open(INFO_CONFIG, "r") as fr:
+            data = json.load(fr)
+
+        data["book-ref"] = dict_loc
+        data["book-name"] = WORKBOOK_FILENAME
+
+        with open(INFO_CONFIG, "w") as fw:
+            json.dump(data, fw, indent=4)
+        
         messagebox.showinfo(
             title="Success!",
             message="Your workbook is under-wraps! Have an amazing semester!",
         )
+
+        
 
     def upload_roster(self) -> None:
         file_upload: str = filedialog.askopenfilename(
@@ -180,6 +212,7 @@ class Main:
 
         with open(INFO_CONFIG, "r") as fr:
             data = json.load(fr)
+
         self.ref = file_upload if file_upload != "" else None
         data["ref"] = file_upload
 
@@ -213,6 +246,8 @@ class Main:
                 with open(STUDENT_CONFIG, "w") as fws:
                     json.dump(student_data, fws, indent=4)
 
+            return True
+
     def on_exit_create(self) -> None:
         exit_prompt = messagebox.askyesno(
             title="Leaving so soon?",
@@ -234,6 +269,8 @@ class Main:
             data_info["color"] = ""
             data_info["term"] = ""
             data_info["days"] = []
+            data_info["book-ref"] = ""
+            data_info["book-name"] = ""
 
             data_student["students"] = []
 
@@ -300,20 +337,23 @@ class Main:
     
 def wb_closed() -> bool:
         try:
-            with open(WORKBOOK_FILENAME, "r+b") as fr:
+            with open(resolve_workbook_path(), "r+b") as fr:
                 ...
-            
+
             return True
-        
+
         except PermissionError:
-            messagebox.showerror(title="Excel Sheet Open", 
+            messagebox.showerror(title="Excel Sheet Open",
                                  message="It appears you are still working in your attendance sheet. "
                                             "Please save it, close it, and try again.")
             return False
+
+        except FileNotFoundError:
+            return True
             
 if __name__ == "__main__":
     try:
-        root = ttk.Window()
+        root = ttk.Window(themename="minty")
         mn = Main(root)
         root.mainloop()
     except KeyboardInterrupt as e:

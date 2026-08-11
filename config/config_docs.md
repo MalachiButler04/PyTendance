@@ -287,3 +287,4 @@ This ensures that a new workbook starts from a clean state, aside from the persi
 ## Summary
 
 The `config` folder acts as persistent storage for PyTendance. It holds the workbook settings, the active student roster, and the shared constants needed to keep the application organized and consistent across sessions.
+ 
