@@ -13,3 +13,8 @@
 /css/styles.css.map
 .prepros
 __pycache__
+
+# PyInstaller build output
+/build
+/dist
+*.zip
