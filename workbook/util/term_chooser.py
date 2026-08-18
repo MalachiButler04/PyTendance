@@ -19,15 +19,13 @@ class TermChooser:
         self.frame = None
 
     def build_gui(self):
-        self.root.geometry("300x225")
-
         self.frame = ttk.Frame(self.root)
         self.frame.place(anchor="center", relx=.5, rely=.5)
 
-        ttk.OptionMenu(self.frame, self.term_entry, *TERM_OPTIONS).pack(padx=5, pady=5)
-        ttk.OptionMenu(self.frame, self.days_entry, *DAY_OPTIONS).pack(padx=5, pady=5)
+        ttk.OptionMenu(self.frame, self.term_entry, *TERM_OPTIONS).pack(padx=10, pady=8)
+        ttk.OptionMenu(self.frame, self.days_entry, *DAY_OPTIONS).pack(padx=10, pady=8)
 
-        ttk.Button(self.frame, text="Submit", command=self.config_info, bootstyle="secondary").pack(padx=5, pady=5)
+        ttk.Button(self.frame, text="Submit", command=self.config_info, bootstyle="secondary").pack(padx=10, pady=8)
 
     def config_info(self):
         if self.term_entry.get() == DEFAULT_TERM_VALUE or self.days_entry.get() == DEFAULT_DAYS_VALUE:

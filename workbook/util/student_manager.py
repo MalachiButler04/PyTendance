@@ -126,8 +126,6 @@ class StudentManager:
         if not wb_closed():
             return
 
-        self.root.geometry("300x200")
-
         new_ref = filedialog.askopenfilename(
             title="Upload New Photo Roster",
             filetypes=[("CSV Files", "*.csv")],
@@ -299,7 +297,7 @@ class StudentManager:
             self.option_frame.destroy()
             self.option_frame = None
 
-        self.option_frame = ttk.Frame(self.root)
+        self.option_frame = ttk.Frame(self.button_frame.master)
         self.option_frame.place(
             relx=0.5,
             rely=0.5,
@@ -417,30 +415,21 @@ class StudentManager:
                 rely=0.5,
                 anchor="center",
             )
-
-        self.root.geometry("300x200")
-
+            
         ttk.Button(
             self.button_frame,
             text="Add Student",
             bootstyle="secondary",
             command=self.add_student,
-        ).grid(
-            row=0,
-            column=0,
-            padx=5,
-        )
+        ).pack(pady=10)
 
         ttk.Button(
             self.button_frame,
             text="Remove Student",
             bootstyle="secondary",
             command=self.remove_student,
-        ).grid(
-            row=0,
-            column=1,
-            padx=5,
-        )
+        ).pack(pady=10)
+
 
     def refresh_dropdown(
         self,

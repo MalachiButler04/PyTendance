@@ -8,8 +8,7 @@ class ColorPicker:
     def __init__(self, root: ttk.Window, on_complete=None):
         self.root = root
         self.on_complete = on_complete
-        root.geometry("300x315")
-        
+
         self.canvas_width = 250
         self.canvas_height = 120
         self.size = 70
@@ -35,7 +34,7 @@ class ColorPicker:
         self.frame.place(relx=0.5, rely=0.5, anchor="center")
 
         self.canv_frame = ttk.Frame(self.frame)
-        self.canv_frame.pack(ipadx=3)
+        self.canv_frame.pack(ipadx=3, pady=(5, 0))
 
         self.canvas = ttk.Canvas(
             self.canv_frame,
@@ -67,7 +66,7 @@ class ColorPicker:
         self.color_label.place(relx=0.4154, rely=.5)
         
         self.button_frame = ttk.Frame(self.frame)
-        self.button_frame.pack(ipady=10)
+        self.button_frame.pack(ipady=10, pady=(5, 0))
 
         first_color = next(iter(self.hex_vals))
         self.selected_color = ttk.StringVar(self.root, value=first_color)
@@ -81,7 +80,7 @@ class ColorPicker:
         self.ops.pack()
 
         self.conf_button = ttk.Button(self.frame, text="Submit", command=self.get_conf, bootstyle="secondary")
-        self.conf_button.pack()
+        self.conf_button.pack(pady=(5, 8))
 
         self.change_color(first_color)
 

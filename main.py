@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 import ttkbootstrap as ttk
+from PIL import Image, ImageTk
 
 from tkinter import filedialog, messagebox
 from workbook.util.color_chooser import ColorPicker
@@ -17,6 +18,7 @@ class Main:
         self.root = root
         self.button_frame = None
         self.manager_frame = None
+        self.content_frame = None
         self.ref = None
         self.valid_csv = False
         self.cp = None
@@ -26,25 +28,17 @@ class Main:
             Main.root = root
             Main.instance = self
             self.init_main(self.root)
-
-            self.property_label = ttk.Label(
-                    self.root,
-                    text="Malachi A. Butler and Jacob T. Imbus",
-                    font=("Aptos", 5),
-                )
-            self.property_label.place(anchor="s", relx=.5, rely=.97)
-
-            ttk.Label(
-                root,
-                text="  PyTendance",
-                font=("Helvetica", 15, "bold"),
-                bootstyle="primary-inverse",
-                ).pack(pady=(15, 10), ipadx=5, ipady=5)
+            
 
     def _clear_button_frame(self):
         if self.button_frame is not None:
             self.button_frame.destroy()
             self.button_frame = None
+
+    def _clear_content_frame(self):
+        if self.content_frame is not None:
+            for widget in self.content_frame.winfo_children():
+                widget.destroy()
 
     def init_main(self, root):
         root.title("PyTendance")
@@ -57,24 +51,83 @@ class Main:
         root.iconphoto(True, icon)
 
         self._clear_button_frame()
-        self.button_frame = ttk.Frame(root)
-        self.button_frame.place(anchor="center", relx=.5, rely=.55)
+        
+        button_style = ttk.Style()
+        button_style.configure(
+            "custom.TButton",
+            borderwidth=0,
+            background="#609b8a",
+            foreground="white",
+            relief="flat"
+        )
 
+        button_style.map(
+            "custom.TButton",
+            background=[
+                ("active", "#6ea092"),
+                ("pressed", "#6ea092"),
+            ],
+        )
+
+        # Left button section
+        button_master = ttk.Frame(
+            root,
+            bootstyle="primary",
+            borderwidth=1,
+            relief="sunken"
+        )
+        button_master.pack(side="left", fill="y", expand=False)
+
+        self.button_frame = ttk.Frame(button_master, bootstyle="primary")
+        self.button_frame.pack(padx=5, pady=10, expand=True)
+
+        # Buttons
         ttk.Button(
             self.button_frame,
-            text="New Worksheet",
-            bootstyle="secondary",
+            text="      New\nWorkbook",
+            width=10,
+            style="custom.TButton",
             command=self.init_workbook,
-            width=15,
         ).pack(pady=5)
 
         ttk.Button(
             self.button_frame,
-            text="Edit Worksheet",
-            bootstyle="secondary",
+            text="      Edit\nWorkbook",
+            width=10,
+            style="custom.TButton",
             command=self.init_student_manager,
-            width=15,
         ).pack(pady=5)
+
+        # Right content section (the white area)
+        self.content_frame = ttk.Frame(root)
+        self.content_frame.pack(side="right", fill="both", expand=True)
+
+        # Title
+        title_frame = ttk.Frame(self.content_frame)
+        title_frame.pack(fill="both", expand=True)
+
+        ttk.Label(
+            title_frame,
+            text="PyTendance",
+            font=("Helvetica", 15, "bold")
+        ).pack(side="top", pady=5)
+
+        # Author
+        ttk.Label(
+            title_frame,
+            text="Malachi A. Butler and Jacob T. Imbus",
+            font=("Aptos", 5, "bold")
+        ).pack(side="bottom", pady=5)
+
+        # Photo section
+        ico_ref = Image.open(BASE_DIR / "assets" / "492snake_100855.png")
+        ico_ref = ico_ref.resize((100, 100), Image.Resampling.LANCZOS)
+
+        photo = ImageTk.PhotoImage(ico_ref)
+
+        label = ttk.Label(title_frame, image=photo)
+        label.image = photo
+        label.place(anchor="center", relx=0.5, rely=0.5)
 
     def init_student_manager(self):
         from workbook.util.student_manager import StudentManager
@@ -87,24 +140,28 @@ class Main:
         if exists and all(load_config()) and load_students():
             sm = StudentManager(self.root)
 
-            self._clear_button_frame()
-            self.button_frame = ttk.Frame(self.root)
-            sm.button_frame = self.button_frame
-            self.button_frame.place(relx=0.5, rely=0.5, anchor="center")
+            self._clear_content_frame()
+            self.manager_frame = ttk.Frame(self.content_frame)
+            sm.button_frame = self.manager_frame
+            self.manager_frame.place(relx=0.5, rely=0.5, anchor="center")
+            
+            self.button_frame.destroy()
 
             ttk.Button(
-                self.button_frame,
+                self.manager_frame,
                 text="Add Student",
                 bootstyle="secondary",
                 command=sm.add_student,
-            ).grid(row=0, column=0, padx=5)
+                width=15
+            ).pack(pady=10)
 
             ttk.Button(
-                self.button_frame,
+                self.manager_frame,
                 text="Remove Student",
                 bootstyle="secondary",
                 command=sm.remove_student,
-            ).grid(row=0, column=1, padx=5)
+                width=15
+            ).pack(pady=10)
 
         else:
             messagebox.showerror(
@@ -133,7 +190,7 @@ class Main:
                 
             if self.has_ref() and self.valid_csv:
                 self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
-                self._clear_button_frame()
+                self._clear_content_frame()
                 
                 if self.has_name():
                     self.init_colorpicker()
@@ -141,19 +198,21 @@ class Main:
                     self.get_name(self.init_colorpicker)
                     
             else:
-                self._clear_button_frame()
-                self.button_frame = ttk.Frame(self.root)
+                self._clear_content_frame()
 
     def init_colorpicker(self) -> None:
         if self.valid_csv:
-            self.cp = ColorPicker(self.root, on_complete=self.init_termpicker)
+            self._clear_content_frame()
+            self.root.geometry("300x200")
+            self.cp = ColorPicker(self.content_frame, on_complete=self.init_termpicker)
             self.cp.build_gui()
         else:
-            self._clear_button_frame()
-            self.button_frame = ttk.Frame(self.root)
+            self._clear_content_frame()
 
     def init_termpicker(self) -> None:
-        self.tc = TermChooser(self.root, on_complete=self.success_screen)
+        self._clear_content_frame()
+        self.root.geometry("300x200")
+        self.tc = TermChooser(self.content_frame, on_complete=self.success_screen)
         self.tc.build_gui()
 
     def success_screen(self) -> None:
@@ -233,10 +292,10 @@ class Main:
             json.dump(data_student, fws, indent=4)
 
     def get_name(self, on_complete=None):
-        self._clear_button_frame()
+        self._clear_content_frame()
         self.root.geometry("300x250")
         
-        master_frame = ttk.Frame(self.root)
+        master_frame = ttk.Frame(self.content_frame)
         master_frame.pack(fill="both", expand=True)
         
         lbl_frame = ttk.Frame(master_frame)
@@ -256,9 +315,7 @@ class Main:
         
         button_frame = ttk.Frame(master_frame)
         button_frame.pack(padx=5, pady=(5, 0))
-        
-        self.property_label.lift()
-        
+
         def add_ta():
             students = load_students()
             full_name = ", ".join((lastname.get().strip(), firstname.get().strip())).title()
