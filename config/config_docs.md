@@ -23,12 +23,13 @@ Typical flow:
 
 1. The user imports a photo roster CSV.
 2. The app stores the roster path in `book_config.json`.
-3. The user selects a theme color.
-4. The app stores the selected hex color in `book_config.json`.
-5. The user selects a term and meeting days.
-6. The app stores those values in `book_config.json`.
-7. The roster names are stored in `students_config.json`.
-8. The workbook generator reads both JSON files to build the Excel workbook.
+3. If no TA name is already recorded, the user enters their first and last name; it is validated against the roster and stored in `book_config.json` as `TA`.
+4. The user selects a theme color.
+5. The app stores the selected hex color in `book_config.json`.
+6. The user selects a term and meeting days.
+7. The app stores those values in `book_config.json`.
+8. The roster names are stored in `students_config.json`.
+9. The workbook generator reads both JSON files to build the Excel workbook.
 
 When the user later adds or removes students, the config files are updated again so the regenerated workbook stays in sync.
 
@@ -114,7 +115,8 @@ Current value:
   "ref": "...",
   "color": "#...",
   "term": "Fall or Spring",
-  "days": ["Tuesday", "Thursday"]
+  "days": ["Tuesday", "Thursday"],
+  "TA": "Last, First"
 }
 ```
 
@@ -167,14 +169,30 @@ Example:
 
 These values are used to label the weekly attendance sheets.
 
+#### `TA`
+
+The name of the teaching assistant using the app, stored in `Last, First` title-cased form, the same format used for student names.
+
+This value is:
+
+- collected once, the first time a workbook is created without a stored `TA` value
+- validated against the current student roster before being saved (the entered name must match an existing student)
+- read by `Tabloid` and `StudentManager` alongside the other `book_config.json` fields
+- used by `StudentManager` to hide the TA from the Add/Remove Student lists, even though the TA remains a normal row in the generated workbook
+
+If no roster has been selected yet, or before a TA has ever been entered, this value is an empty string.
+
 ### When this file changes
 
 `book_config.json` is updated when:
 
 - the user imports a roster CSV
+- the user enters and confirms a TA name for the first time
 - the user confirms a color theme
 - the user confirms the term and meeting days
 - the workbook is reset or cleared during a new workbook workflow
+
+`TA` is the one exception: it is not cleared during a reset, so once recorded it persists across "New Worksheet" runs until manually edited in the file.
 
 ## `students_config.json`
 
@@ -238,6 +256,8 @@ The config folder expects the following:
 - the roster path stored in `ref` should point to a CSV file
 - the roster CSV must contain a `Sortable name` column
 - `days` must always contain exactly two entries for the workbook labels
+- `book_config.json` must contain a `TA` key (even if empty), since `Tabloid.load_config()` and `StudentManager` read it unconditionally
+- the `TA` value, once set, must match a name in `students_config.json`
 
 If these assumptions are broken, parts of the application may fail to load workbook data correctly.
 
@@ -253,7 +273,9 @@ During a reset:
 - `days` is reset to an empty list
 - `students` is reset to an empty list
 
-This ensures that a new workbook starts from a clean state.
+`TA` is intentionally left untouched by reset, so the recorded TA name carries over into the next workbook instead of being re-entered every time.
+
+This ensures that a new workbook starts from a clean state, aside from the persisted TA name.
 
 ## Notes for Maintenance
 
@@ -265,3 +287,4 @@ This ensures that a new workbook starts from a clean state.
 ## Summary
 
 The `config` folder acts as persistent storage for PyTendance. It holds the workbook settings, the active student roster, and the shared constants needed to keep the application organized and consistent across sessions.
+ 

@@ -3,15 +3,15 @@ import pandas as pd
 import ttkbootstrap as ttk
 
 from tkinter import StringVar, messagebox, filedialog
+from pathlib import Path
 
-from main import wb_closed, get_name
+from main import wb_closed
 
 from config.path_config import (
     STUDENT_CONFIG,
     TOTAL_WEEKS,
     WEEK_SHEET_PREFIX,
-    WORKBOOK_FILENAME,
-    INFO_CONFIG,
+    INFO_CONFIG
 )
 
 from workbook.util.tabloid import (
@@ -20,7 +20,12 @@ from workbook.util.tabloid import (
     load_students,
 )
 
+def resolve_workbook_path() -> str:
+    _, _, _, _, _, book_name, book_ref = load_config()
 
+    if book_ref and book_name:
+        return str(Path(book_ref) / book_name)
+    
 class StudentManager:
 
     FRAMES = None
@@ -41,7 +46,7 @@ class StudentManager:
         self._lab0 = None
         self._lecture1 = None
 
-        self.ref, self.color, _, self.days, self.TA = load_config()
+        self.ref, self.color, _, self.days, self.TA, _, _ = load_config()
 
         self.students = self._load_students()
         (
@@ -78,7 +83,13 @@ class StudentManager:
         with open(STUDENT_CONFIG, "r", encoding="utf-8") as sr:
             data = json.load(sr)
 
-        data["students"] = list(self.students)
+        stored = data.get("students", [])
+        updated = list(self.students)
+
+        if self.TA and self.TA in stored and self.TA not in updated:
+            updated = sorted([*updated, self.TA])
+
+        data["students"] = updated
 
         with open(STUDENT_CONFIG, "w", encoding="utf-8") as sw:
             json.dump(data, sw, indent=4)
@@ -108,6 +119,8 @@ class StudentManager:
             _,
             self.days,
             self.TA,
+            _,
+            _
         ) = load_config()
 
         self.students = self._load_students()
@@ -192,11 +205,27 @@ class StudentManager:
             )
 
             self.students = merged_students
-            self.STUDENTS = self.students
+            self.STUDENTS = list(merged_students)
+
+            self._sync_class_state()
 
             self._save_students()
 
             self._save_roster_reference(new_ref)
+
+            try:
+                tab = Tabloid(skip_init=True)
+                tab.rebuild_workbook()
+
+            except Exception as exc:
+                messagebox.showerror(
+                    title="Processing Error",
+                    message=(
+                        f"The roster was saved, but the workbook could "
+                        f"not be rebuilt:\n{exc}"
+                    ),
+                )
+                return
 
             self._reload_state()
 
@@ -236,7 +265,7 @@ class StudentManager:
             )
 
             frame = pd.read_excel(
-                WORKBOOK_FILENAME,
+                resolve_workbook_path(),
                 sheet_name=sheet_name,
             )
 

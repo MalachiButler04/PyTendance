@@ -3,19 +3,28 @@ from xlsxwriter import Workbook
 import json
 import os
 from os import remove
-from config.path_config import STUDENT_CONFIG, INFO_CONFIG, WORKBOOK_FILENAME, TOTAL_WEEKS, WEEK_SHEET_PREFIX, LAB_ATTENDANCE_DIVISOR
+from pathlib import Path
+from config.path_config import (
+    STUDENT_CONFIG, 
+    INFO_CONFIG, 
+    WORKBOOK_FILENAME, 
+    TOTAL_WEEKS, 
+    WEEK_SHEET_PREFIX, 
+    LAB_ATTENDANCE_DIVISOR
+)
 
 class Tabloid:
+
     TA = None
-    
-    def __init__(self, skip_init: bool = False):
+    def __init__(self, skip_init: bool = False, output_path: str | None = None):
         self.weeks = [f"{WEEK_SHEET_PREFIX}{i}" for i in range(1, TOTAL_WEEKS + 1)]
         self.students = load_students()
-        self.wb = Workbook(WORKBOOK_FILENAME)
+        self.output_path = output_path or WORKBOOK_FILENAME
+        self.wb = Workbook(self.output_path)
         
-        self.ref, self.color, self.term, self.days, self.ta = load_config()
+        self.ref, self.color, self.term, self.days, self.ta, self.bn, self.br = load_config()
 
-        Tabloid.ta = self.ta
+        Tabloid.TA = self.ta
         
         self.header_format = self.wb.add_format({
             "align": "center",
@@ -202,10 +211,12 @@ class Tabloid:
     def rebuild_workbook(self):
         from workbook.util.student_manager import StudentManager
 
-        if os.path.exists(WORKBOOK_FILENAME):
-            remove(WORKBOOK_FILENAME)
+        target_path = resolve_workbook_path()
 
-        self.wb = Workbook(WORKBOOK_FILENAME)
+        if os.path.exists(target_path):
+            remove(target_path)
+
+        self.wb = Workbook(target_path)
         self.header_format = self.wb.add_format({
             "align": "center",
             "bold": True,
@@ -229,10 +240,17 @@ class Tabloid:
 
 def load_students() -> list[str]:
     with open(STUDENT_CONFIG, "r") as fr:
-        students = json.load(fr)["students"]
-        return students
+        return json.load(fr)["students"]
 
 def load_config():
     with open(INFO_CONFIG, "r") as fr:
         data = json.load(fr)
-        return data["ref"], data["color"], data["term"], data["days"], data["TA"]       
+        return data["ref"], data["color"], data["term"], data["days"], data["TA"], data["book-name"], data["book-ref"]
+
+def resolve_workbook_path() -> str:
+    _, _, _, _, _, book_name, book_ref = load_config()
+
+    if book_ref and book_name:
+        return str(Path(book_ref) / book_name)
+
+    return WORKBOOK_FILENAME
