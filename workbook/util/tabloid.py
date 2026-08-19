@@ -245,7 +245,15 @@ def load_students() -> list[str]:
 def load_config():
     with open(INFO_CONFIG, "r") as fr:
         data = json.load(fr)
-        return data["ref"], data["color"], data["term"], data["days"], data["TA"], data["book-name"], data["book-ref"]
+        return (
+            data.get("ref", ""),
+            data.get("color", ""),
+            data.get("term", ""),
+            data.get("days", []),
+            data.get("TA", ""),
+            data.get("book-name", ""),
+            data.get("book-ref", ""),
+        )
 
 def resolve_workbook_path() -> str:
     _, _, _, _, _, book_name, book_ref = load_config()

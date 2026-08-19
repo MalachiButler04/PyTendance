@@ -37,22 +37,7 @@ class Main:
             Main.instance = self
             self.init_main(self.root)
 
-            self.property_label = ttk.Label(
-                    self.root,
-                    text="Malachi A. Butler and Jacob T. Imbus",
-                    font=("Aptos", 5),
-                )
-
             self.ta = get_name()
-
-            self.property_label.place(anchor="s", relx=.5, rely=.97)
-
-            ttk.Label(
-                root,
-                text="  PyTendance",
-                font=("Helvetica", 15, "bold"),
-                bootstyle="primary-inverse",
-                ).pack(pady=(15, 10), ipadx=5, ipady=5)
             
 
     def _clear_button_frame(self):
@@ -355,6 +340,8 @@ class Main:
 
     def init_get_name(self, on_complete=None):
         self._clear_button_frame()
+        self.get_name(on_complete)
+
     def get_name(self, on_complete=None):
         self._clear_content_frame()
         self.root.geometry("300x250")

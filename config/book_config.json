@@ -1,7 +1,12 @@
 {
-    "ref": "",
-    "color": "",
-    "term": "",
-    "days": [],
-    "TA": ""
+    "ref": "C:/Users/butle/Downloads/PhotoRoster_2425658_2026-08-19.csv",
+    "color": "#d9ead3",
+    "term": "Fall",
+    "days": [
+        "Tuesday",
+        "Thursday"
+    ],
+    "TA": "Butler, Malachi",
+    "book-name": "AttendanceTabloid19082026-6439599002148298410.xlsx",
+    "book-ref": "C:/Users/butle/OneDrive/Desktop"
 }
