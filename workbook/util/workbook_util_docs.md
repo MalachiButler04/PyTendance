@@ -31,9 +31,9 @@ The workbook workflow follows this general sequence:
 2. A roster CSV is imported and student names are stored in the config files.
 3. The user selects a theme color.
 4. The user selects a term and the class meeting days.
-5. `Tabloid` generates `Attendance Tabloid.xlsx`.
+5. The user picks a save folder, and `Tabloid` generates a uniquely named `.xlsx` file there. The chosen folder/filename are saved to `book_config.json` as `book-ref`/`book-name`.
 6. If the workbook already exists, `StudentManager` can add or remove students.
-7. After edits, the workbook is rebuilt so all summary sheets stay in sync.
+7. After edits, the workbook is rebuilt (at the path resolved by `resolve_workbook_path()`) so all summary sheets stay in sync — provided the workbook was saved in Excel beforehand.
 
 ## Module Documentation
 
@@ -51,17 +51,18 @@ The workbook workflow follows this general sequence:
 
 - `self.weeks`: list of workbook sheet names such as `Week 1`, `Week 2`, and so on
 - `self.students`: current student list loaded from config
+- `self.output_path`: the path the workbook is written to — either the explicit `output_path` passed to the constructor, or the fallback `WORKBOOK_FILENAME`
 - `self.wb`: active `xlsxwriter.Workbook` instance
-- `self.ref`, `self.color`, `self.term`, `self.days`, `self.ta`: workbook settings loaded from configuration, including the recorded TA name
+- `self.ref`, `self.color`, `self.term`, `self.days`, `self.ta`, `self.bn`, `self.br`: workbook settings loaded from configuration, including the recorded TA name (`self.ta`) and the last saved workbook filename/folder (`self.bn`/`self.br`)
 - `self.header_format`: formatted header style used across sheets
 - `self.centered_vals`: centered cell format without borders
 - `self.centeredwborder`: centered cell format with borders
 
 #### Constructor
 
-`Tabloid(skip_init: bool = False)`
+`Tabloid(skip_init: bool = False, output_path: str | None = None)`
 
-When `skip_init` is `False`, the workbook is created immediately. When `True`, the instance is prepared for regeneration without writing a new workbook right away.
+When `skip_init` is `False`, the workbook is created immediately at `output_path` (or the fallback `WORKBOOK_FILENAME` if `output_path` is not given). When `True`, the instance is prepared for regeneration without writing a new workbook right away — this is the mode `StudentManager` uses before calling `rebuild_workbook()`, which writes to the path resolved by `resolve_workbook_path()` instead.
 
 #### Methods
 
@@ -132,7 +133,13 @@ Reads the student list from `config/students_config.json`.
 
 ##### `load_config()`
 
-Reads the workbook configuration from `config/book_config.json` and returns `(ref, color, term, days, TA)`.
+Reads the workbook configuration from `config/book_config.json` and returns `(ref, color, term, days, TA, book_name, book_ref)`.
+
+##### `resolve_workbook_path()` (module-level function)
+
+Calls `load_config()` and, if both `book_ref` and `book_name` are set, returns the joined path (`Path(book_ref) / book_name`) as a string. Otherwise falls back to `WORKBOOK_FILENAME`.
+
+This is the single source of truth for "where is the current workbook file," used by `rebuild_workbook()`, `wb_closed()` in `main.py`, and `StudentManager.init_data()`. A near-identical copy of this function is also defined in `workbook/util/student_manager.py` — keep both in sync if the resolution logic changes.
 
 ### Workbook sheet output
 
@@ -183,6 +190,7 @@ This class provides the add and remove student workflows for the edit mode of th
 - `self.TA`: the recorded TA name loaded from `book_config.json`
 - `self.FRAMES`: in-memory copy of week sheet data
 - `self.STUDENTS`: shared student list used during edit actions, also excluding the TA
+- Class-level mirrors `StudentManager.FRAMES`, `StudentManager.STUDENTS`, `StudentManager.REF`, `StudentManager.COLOR`, `StudentManager.DAYS`, `StudentManager.TA`: synchronized from the instance via `_sync_class_state()` after every state change, since `Tabloid.rebuild_workbook()` reads `StudentManager.FRAMES` directly as a class attribute
 
 #### Methods
 
@@ -190,23 +198,31 @@ This class provides the add and remove student workflows for the edit mode of th
 
 Loads the student list from `config/students_config.json` and removes the recorded TA name, if present, so the TA never appears in the Add/Remove Student screens.
 
+##### `_save_students()`
+
+Writes `self.students` back to `students_config.json`, re-adding the TA to the saved list if it was already present (since `self.students` never includes the TA).
+
+##### `_save_roster_reference(roster_path)`
+
+Updates `ref` in `book_config.json` to the newly uploaded roster path after `add_student()` succeeds.
+
 ##### `_reload_state()`
 
-Reloads the stored configuration (including `TA`) and rebuilds the workbook.
+Reloads the stored configuration (including `TA`, `ref`, `color`, `days`) and re-derives `self.students` and the cached week-sheet frames via `init_data()`, then syncs the class-level mirrors.
 
 ##### `add_student()`
 
-Imports a new roster CSV, validates that it contains a `Sortable name` column, and adds only students that are not already present.
+First checks `wb_closed()` (defined in `main.py`, checking the path from `resolve_workbook_path()`); if the workbook file is open elsewhere, the operation is aborted with an error message.
 
-Before this runs, `wb_closed()` (defined in `main.py`) checks that the generated workbook file is not currently open elsewhere; if it is, the operation is aborted with an error message.
+Imports a new roster CSV, validates that it contains a `Sortable name` column, and adds only students that are not already present.
 
 Important behavior:
 
 - Ignores duplicate names
 - Ignores `Lu, Lingma`
 - Ignores the recorded TA name (`self.TA`), so the TA is never added as a duplicate student row
-- Updates `students_config.json`
-- Refreshes the workbook after changes are saved
+- Updates `students_config.json` and `ref` in `book_config.json`
+- Calls `Tabloid(skip_init=True).rebuild_workbook()` to refresh the workbook, then reloads state via `_reload_state()`
 
 ##### `remove_student()`
 
@@ -230,7 +246,9 @@ Rebuilds the dropdown options for the current student list.
 
 ##### `init_data()`
 
-Loads existing week sheets from the workbook and extracts the columns needed for rebuilds.
+Loads existing week sheets from the workbook (via `pandas.read_excel(resolve_workbook_path(), ...)`) and extracts the columns needed for rebuilds.
+
+Because this reads the workbook file **from disk**, it only sees data that has been saved in Excel. Any attendance checkboxes ticked in an open, unsaved Excel session are invisible to this method — `wb_closed()` prevents editing while the file is *open*, but does not guarantee it was *saved* before being closed. If the file was closed without saving, `init_data()` will load the older saved state, and that older state is what the rebuilt workbook will contain.
 
 ### Edit-mode workflow
 
@@ -337,6 +355,7 @@ Stores workbook metadata:
 - `term`: selected term
 - `days`: selected class days
 - `TA`: the recorded TA name; persists across new-workbook resets and is used to hide the TA from `StudentManager`'s Add/Remove screens
+- `book-ref`, `book-name`: the folder and filename the workbook was last saved to; used by `resolve_workbook_path()` to locate the file for `wb_closed()` checks and rebuilds
 
 ### `students_config.json`
 
@@ -363,9 +382,11 @@ The workbook code includes basic protection against invalid input:
 - Empty selections in the color and term screens
 - Removing a student without selecting one first
 - Attempting to edit workbook data when no workbook exists
-- Attempting to add or remove a student while the workbook file is open in another program (`wb_closed()` in `main.py`)
+- Attempting to add or remove a student while the workbook file is open in another program (`wb_closed()` in `main.py`, checked against `resolve_workbook_path()`)
 
 Most errors are reported through message boxes so the user can correct the issue in the GUI.
+
+What is **not** currently detected or reported: an Excel workbook that was closed without saving. `wb_closed()` only checks whether the file can be opened for writing (i.e., is it currently locked by another program); it cannot tell whether the last close discarded unsaved edits. Users must save the workbook themselves before triggering an add/remove student action, or their unsaved attendance data will be silently lost on the next rebuild.
 
 ## Notes for Future Maintenance
 

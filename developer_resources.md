@@ -49,14 +49,16 @@ The project is organized around three main areas:
 4. If no TA name is recorded yet, the user enters one and it is validated against the imported roster.
 5. The user chooses a color theme.
 6. The user chooses the term and meeting days.
-7. `Tabloid` creates the workbook.
-8. If the workbook already exists, `StudentManager` can add or remove students (excluding the TA from that list) and then rebuild the workbook. Both actions first confirm the workbook file isn't open elsewhere via `wb_closed()`.
+7. The user picks a folder to save the workbook in (`Main.success_screen()`); `Tabloid` creates the workbook at that path, and the resolved folder/filename are written back to `book_config.json` as `book-ref`/`book-name`.
+8. If the workbook already exists, `StudentManager` can add or remove students (excluding the TA from that list) and then rebuild the workbook. Both actions first confirm the workbook file isn't open elsewhere via `wb_closed()`, which checks the path resolved by `resolve_workbook_path()`.
+
+> **Data integrity:** Rebuilds always read the workbook **as last saved to disk**. If the workbook is open in Excel with unsaved changes, `wb_closed()` blocks the edit; but if it has been closed without saving, the rebuild will silently use the older saved data and any unsaved attendance edits are lost. Always save the workbook in Excel before triggering an add/remove student action.
 
 ### Source of truth
 
-- `book_config.json` stores workbook settings such as roster path, color, term, days, and the recorded TA name.
+- `book_config.json` stores workbook settings such as roster path, color, term, days, the recorded TA name, and the last save location (`book-ref`/`book-name`).
 - `students_config.json` stores the active student list.
-- `path_config.py` stores shared constants for file names and sheet naming.
+- `path_config.py` stores shared constants for file names and sheet naming, including a fallback `WORKBOOK_FILENAME` generated fresh (date + hash) each time the app starts.
 
 These files must remain in sync with the workbook code, because the workbook builder depends on them to render the correct sheets and formulas.
 
@@ -82,18 +84,22 @@ This section shows where the main user interface pieces live and which files sho
 
 The initial application window, including the main title, size, icon, and entry buttons, is defined in [main.py](main.py).
 
+The landing screen is split into a left navigation panel (styled buttons on a colored background) and a right content panel (app title, author credit, and icon image).
+
 Edit `Main.init_main()` when changing:
 
 - the main window size or title
 - the application icon
-- the primary `New Worksheet` button
-- the primary `Edit Worksheet` button
+- the custom button style (`custom.TButton`)
+- the primary `New Workbook` button
+- the primary `Edit Workbook` button
+- the app title label ("PyTendance") or author credit label ("Malachi A. Butler and Jacob T. Imbus")
+- the icon image shown on the landing screen
 - the initial layout of the landing screen
 
 Edit `Main.__init__()` when changing:
 
-- the top banner text
-- the small credit label shown on the main screen
+- instance state initialized when the app starts (roster reference, TA, color picker/term picker instances, previously saved workbook path)
 
 ### New workbook flow
 
@@ -112,13 +118,23 @@ Edit `Main.upload_roster()` when changing:
 - roster validation behavior
 - the way imported names are written into config
 
-Edit `Main.get_name()` when changing:
+Edit `Main.get_name()` (instance method) when changing:
 
-- the TA name entry screen shown after roster upload
+- the TA name entry screen shown after roster upload, including the placeholder-text first/last name fields
 - validation that the entered TA name exists in the imported roster
 - how the TA name is written to `book_config.json`
 
+Note there is also a module-level `get_name()` function (top of [main.py](main.py)) that simply reads and returns the recorded `TA` value from `book_config.json` — it is unrelated to the `Main.get_name()` UI screen and is used, for example, to populate `self.ta` when a TA is already recorded.
+
 Edit `Main.has_name()` when changing whether a recorded TA name causes the TA entry screen to be skipped.
+
+Edit `Main.success_screen()` when changing:
+
+- the save-location folder picker shown after term/day confirmation
+- workbook generation via `Tabloid(output_path=...)`
+- cleanup of a previous workbook file when the save location changes between runs
+- how `book-ref`/`book-name` are written to `book_config.json`
+- the success message and automatic opening of the generated file (`os.startfile`)
 
 Edit `ColorPicker.build_gui()` when changing:
 
@@ -161,15 +177,17 @@ Edit `StudentManager.back_to_edit()` when changing the layout of the edit-mode m
 
 The actions that clear state or warn the user before leaving are in [main.py](main.py).
 
-Edit `Main.on_exit_create()` when changing the exit confirmation dialog shown during workbook creation.
+Edit `Main.on_exit_create()` when changing the exit confirmation dialog intended for workbook creation. **Note:** as of the current implementation this method is not wired to any window-close event (no `root.protocol("WM_DELETE_WINDOW", ...)` handler calls it), so it is currently dead code — verify whether it should be connected before relying on it.
 
-Edit `Main.reset_json()` when changing how the application clears saved config values. Note that this method intentionally does not clear the `TA` field, so the recorded TA name survives a reset.
+Edit `Main.reset_json()` when changing how the application clears saved config values. Note that this method intentionally does not clear the `TA` field, so the recorded TA name survives a reset; it does clear `book-ref` and `book-name` along with `ref`, `color`, `term`, and `days`.
 
 ### Workbook file lock check
 
-`wb_closed()` in [main.py](main.py) checks whether `Attendance Tabloid.xlsx` can be opened for writing, and shows an error if it's currently open in another program (such as Excel). It is called before entering the edit-mode menu and before `StudentManager.add_student()` / `StudentManager.remove_student()` run.
+`wb_closed()` in [main.py](main.py) checks whether the workbook file at the path returned by `resolve_workbook_path()` (from `workbook/util/tabloid.py`) can be opened for writing, and shows an error if it's currently open in another program (such as Excel). It is called before entering the edit-mode menu and before `StudentManager.add_student()` / `StudentManager.remove_student()` run.
 
 Edit `wb_closed()` when changing this file-lock check or its error message.
+
+> **Important:** `wb_closed()` only detects whether the file is *open* elsewhere — it does not detect unsaved changes. A workbook that has been closed without saving will look "closed" to this check, but any unsaved attendance edits will still be lost on the next rebuild. Always save in Excel before running an add/remove student action.
 
 ### Where to look for common UI changes
 
@@ -252,7 +270,7 @@ Edit `Tabloid.load_config()` when changing:
 
 The following constants in [config/path_config.py](config/path_config.py) directly affect the report:
 
-- `WORKBOOK_FILENAME`: output file name
+- `WORKBOOK_FILENAME`: fallback output file name, used only when no `book-ref`/`book-name` is saved yet in `book_config.json`
 - `TOTAL_WEEKS`: number of weekly sheets and result columns
 - `WEEK_SHEET_PREFIX`: weekly sheet naming pattern
 - `LAB_ATTENDANCE_DIVISOR`: divisor used in attendance percentage calculations
@@ -406,6 +424,7 @@ The project currently expects:
 - `Lu, Lingma` to be excluded during import
 - exactly two meeting days selected for each workbook setup
 - a recorded `TA` name that matches an existing student, which is excluded from `StudentManager`'s add/remove lists but still appears as a normal student row in the workbook
+- the workbook to be **saved** in Excel before an add/remove student edit is run, since rebuilds read the last saved copy of the file from disk
 
 Any change to these assumptions should be reflected in the docs and in the workbook logic.
 
@@ -418,6 +437,7 @@ The application currently depends on:
 - ttkbootstrap
 - xlsxwriter
 - openpyxl for Excel file reading through pandas
+- Pillow (`PIL`) for rendering the landing screen icon image
 
 Building a standalone executable additionally requires PyInstaller (see [Packaging](#packaging) below). It is not needed to run the app from source.
 

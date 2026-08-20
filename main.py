@@ -201,31 +201,32 @@ class Main:
             self.upload_roster()
                 
             if self.has_name():
+                self.ta = get_name()
                 try:
                     roster_df: pd.DataFrame = pd.read_csv(self.ref)
                     cleaned = roster_df[~roster_df["Sortable name"].isin(("Lu, Lingma", self.ta))]["Sortable name"]
+                    self.valid_csv = True
                 except (FileNotFoundError, pd.errors.ParserError, KeyError):
-                        messagebox.showerror(
-                            title="Error",
-                            message="The selected file was not accepted. Please choose a valid Photo Roster.",
-                        )
-                        return
-                    
-                if self.valid_csv:
-                    with open(STUDENT_CONFIG, "r") as frs:
-                        student_data = json.load(frs)
-                    
+                    messagebox.showerror(
+                        title="Error",
+                        message="The selected file was not accepted. Please choose a valid Photo Roster.",
+                    )
+                    return
+
+                with open(STUDENT_CONFIG, "r") as frs:
+                    student_data = json.load(frs)
+
                 students = student_data["students"]
                 for i in cleaned:
                     students.append(i)
-                    
+
                 sorted_students = sorted([stud.title() for stud in students])
                 student_data["students"] = sorted_students
-                    
+
                 with open(STUDENT_CONFIG, "w") as fws:
                     json.dump(student_data, fws, indent=4)
-                    
-                    self.init_colorpicker()
+
+                self.init_colorpicker()
             else:
                 self.init_get_name(self.init_colorpicker)
                     

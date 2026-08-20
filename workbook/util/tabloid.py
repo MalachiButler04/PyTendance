@@ -150,7 +150,7 @@ class Tabloid:
         max_width = len(self.students[0])
         for row, student in enumerate(self.students, start=1):
             sheet.write(row, 0, student)
-            max_width = max(len(student), max_width) * .98
+            max_width = max(len(student), max_width)
             sheet.set_column(0, 0, max_width)
             sheet.write_formula(row, 6, f"=COUNTIF(B{row+1}:E{row+1}, TRUE)", self.centered_vals)
             sheet.write_formula(row, 7, f"=COUNTIF(C{row+1}, TRUE)", self.centered_vals)
@@ -189,7 +189,7 @@ class Tabloid:
 
         for row, student in enumerate(self.students, start=1):
             sheet.write(row, 0, student)
-            max_width = max(len(student), max_width) * 0.98
+            max_width = max(len(student), max_width)
             sheet.set_column(0, 0, max_width)
 
             sheet.write_formula(row, 6, f"=COUNTIF(B{row+1}:E{row+1}, TRUE)", self.centered_vals)
