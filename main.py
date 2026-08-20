@@ -38,8 +38,7 @@ class Main:
             Main.instance = self
             self.init_main(self.root)
 
-            self.ta = get_name()
-            
+            self.ta = None            
 
     def _clear_button_frame(self):
         if self.button_frame is not None:
@@ -197,29 +196,41 @@ class Main:
             
         if warning:
             self.valid_csv = False
-
-            _, _, _, _, _, old_book_name, old_book_ref = load_config()
-            self.old_workbook_path = (
-                str(Path(old_book_ref) / old_book_name)
-                if old_book_ref and old_book_name
-                else None
-            )
-
             self.reset_json()
 
-            has_uploaded = self.upload_roster()
-
-            if self.has_ref() and self.valid_csv and has_uploaded:
-                self.root.protocol("WM_DELETE_WINDOW", self.on_exit_create)
-                self._clear_content_frame()
+            self.upload_roster()
                 
-                if self.has_name():
-                    self.init_colorpicker()
-                else:
-                    self.init_get_name(self.init_colorpicker)
+            if self.has_name():
+                try:
+                    roster_df: pd.DataFrame = pd.read_csv(self.ref)
+                    cleaned = roster_df[~roster_df["Sortable name"].isin(("Lu, Lingma", self.ta))]["Sortable name"]
+                except (FileNotFoundError, pd.errors.ParserError, KeyError):
+                        messagebox.showerror(
+                            title="Error",
+                            message="The selected file was not accepted. Please choose a valid Photo Roster.",
+                        )
+                        return
                     
+                if self.valid_csv:
+                    with open(STUDENT_CONFIG, "r") as frs:
+                        student_data = json.load(frs)
+                    
+                students = student_data["students"]
+                for i in cleaned:
+                    students.append(i)
+                    
+                sorted_students = sorted([stud.title() for stud in students])
+                student_data["students"] = sorted_students
+                    
+                with open(STUDENT_CONFIG, "w") as fws:
+                    json.dump(student_data, fws, indent=4)
+                    
+                    self.init_colorpicker()
             else:
-                self._clear_content_frame()
+                self.init_get_name(self.init_colorpicker)
+                    
+        else:
+            self._clear_content_frame()
 
     def init_colorpicker(self) -> None:
         if self.valid_csv:
@@ -284,35 +295,6 @@ class Main:
         with open(INFO_CONFIG, "w") as fw:
             json.dump(data, fw, indent=4)
 
-        if self.ref:
-            try:
-                roster_df: pd.DataFrame = pd.read_csv(self.ref)
-                cleaned = roster_df[~roster_df["Sortable name"].isin(("Lu, Lingma", self.ta))]["Sortable name"]
-                self.valid_csv = True
-            except (FileNotFoundError, pd.errors.ParserError, KeyError):
-                messagebox.showerror(
-                    title="Error",
-                    message="The selected file was not accepted. Please choose a valid Photo Roster.",
-                )
-                self.ref = None
-                self.valid_csv = False
-
-            if self.valid_csv:
-                with open(STUDENT_CONFIG, "r") as frs:
-                    student_data = json.load(frs)
-
-                students = student_data["students"]
-                for i in cleaned:
-                    students.append(i)
-
-                sorted_students = sorted([stud.title() for stud in students])
-                student_data["students"] = sorted_students
-
-                with open(STUDENT_CONFIG, "w") as fws:
-                    json.dump(student_data, fws, indent=4)
-
-            return True
-
     def on_exit_create(self) -> None:
         exit_prompt = messagebox.askyesno(
             title="Leaving so soon?",
@@ -375,31 +357,56 @@ class Main:
                 entry.delete(0, END)
 
         def focus_out(entry: ttk.Entry, placeholder):
-            if entry.get() == placeholder: 
-                return
-            else:
+            if not entry.get():
+                entry.insert(0, placeholder)
 
+        firstname.bind("<FocusOut>", lambda _: focus_out(firstname, placeholder="First Name"))
+        firstname.bind("<FocusIn>", lambda _: focus_in(firstname, placeholder="First Name"))
 
-        firstname.bind("<FocusOut>", lambda event: focus_out(firstname, placeholder="First Name"))
-        firstname.bind("<FocusIn>", lambda event: focus_in(firstname, placeholder="First Name"))
+        lastname.bind("<FocusOut>", lambda _: focus_out(lastname, placeholder="Last Name"))
+        lastname.bind("<FocusIn>", lambda _: focus_in(lastname, placeholder="Last Name"))
 
-        lastname.bind("<FocusOut>", lambda event: focus_out(lastname, placeholder="Last Name"))
-        lastname.bind("<FocusIn>", lambda event: focus_in(lastname, placeholder="Last Name"))
 
         def add_ta():
-            students = load_students()
             full_name = ", ".join((lastname.get().strip(), firstname.get().strip())).title()
-            
-            if full_name in students:
+
+            try:
+                roster_df: pd.DataFrame = pd.read_csv(self.ref)
+            except (FileNotFoundError, pd.errors.ParserError, KeyError):
+                messagebox.showerror(
+                    title="Error",
+                    message="The selected file was not accepted. Please choose a valid Photo Roster.",
+                )
+                return
+
+            if full_name in roster_df["Sortable name"].values:
+                self.ta = full_name
+                self.valid_csv = True
+
                 with open(INFO_CONFIG, "r") as fr:
                     data = json.load(fr)
                 data["TA"] = full_name
-                    
+
                 with open(INFO_CONFIG, "w") as fw:
                     json.dump(data, fw, indent=4)
 
+                cleaned = roster_df[~roster_df["Sortable name"].isin(("Lu, Lingma", self.ta))]["Sortable name"]
+
+                with open(STUDENT_CONFIG, "r") as frs:
+                    student_data = json.load(frs)
+
+                students = student_data["students"]
+                for i in cleaned:
+                    students.append(i)
+
+                sorted_students = sorted([stud.title() for stud in students])
+                student_data["students"] = sorted_students
+
+                with open(STUDENT_CONFIG, "w") as fws:
+                    json.dump(student_data, fws, indent=4)
+
+                master_frame.destroy()
                 if on_complete:
-                    master_frame.destroy()
                     on_complete()
             else:
                 messagebox.showerror(message="TA does not exist inside of your uploaded roster. Please reupload and try again!")
