@@ -91,16 +91,16 @@ class StudentManager:
 
         data["students"] = updated
 
-        with open(STUDENT_CONFIG, "w", encoding="utf-8") as sw:
+        with open(STUDENT_CONFIG, "w") as sw:
             json.dump(data, sw, indent=4)
 
     def _save_roster_reference(self, roster_path):
-        with open(INFO_CONFIG, "r", encoding="utf-8") as fr:
+        with open(INFO_CONFIG, "r") as fr:
             data = json.load(fr)
 
         data["ref"] = roster_path
 
-        with open(INFO_CONFIG, "w", encoding="utf-8") as fw:
+        with open(INFO_CONFIG, "w") as fw:
             json.dump(data, fw, indent=4)
 
     def _clear_frame(self, frame: ttk.Frame | None):
@@ -316,9 +316,7 @@ class StudentManager:
     def remove_student(self):
         if not wb_closed():
             return
-
-        self.root.geometry("300x250")
-
+        
         if self.button_frame:
             self._clear_frame(self.button_frame)
 

@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
+from tkinter.constants import END
 
 from pathlib import Path
 from tkinter import filedialog, messagebox
@@ -67,7 +68,8 @@ class Main:
             borderwidth=0,
             background="#609b8a",
             foreground="white",
-            relief="flat"
+            relief="flat",
+            font=("Helvetica", 10)
         )
 
         button_style.map(
@@ -93,7 +95,7 @@ class Main:
         # Buttons
         ttk.Button(
             self.button_frame,
-            text="      New\nWorkbook",
+            text="    New\nWorkbook",
             width=10,
             style="custom.TButton",
             command=self.init_workbook,
@@ -101,7 +103,7 @@ class Main:
 
         ttk.Button(
             self.button_frame,
-            text="      Edit\nWorkbook",
+            text="     Edit\nWorkbook",
             width=10,
             style="custom.TButton",
             command=self.init_student_manager,
@@ -142,7 +144,7 @@ class Main:
         from workbook.util.student_manager import StudentManager
 
         exists = os.path.exists(resolve_workbook_path())
-
+        
         if not wb_closed():
             return
             
@@ -150,6 +152,7 @@ class Main:
             sm = StudentManager(self.root)
 
             self._clear_content_frame()
+            self.root.title("PyTendance - Student Manager")
             self.manager_frame = ttk.Frame(self.content_frame)
             sm.button_frame = self.manager_frame
             self.manager_frame.place(relx=0.5, rely=0.5, anchor="center")
@@ -263,7 +266,8 @@ class Main:
             message="Your workbook is under-wraps! Have an amazing semester!",
         )
 
-        
+        os.startfile(dest)
+
 
     def upload_roster(self) -> None:
         file_upload: str = filedialog.askopenfilename(
@@ -344,28 +348,43 @@ class Main:
 
     def get_name(self, on_complete=None):
         self._clear_content_frame()
-        self.root.geometry("300x250")
         
         master_frame = ttk.Frame(self.content_frame)
         master_frame.pack(fill="both", expand=True)
         
         lbl_frame = ttk.Frame(master_frame)
-        lbl_frame.pack(padx=5, pady=5)
+        lbl_frame.place(anchor="center", relx=.5 , rely=.25)
         ttk.Label(lbl_frame, text=" Enter your name", font=("Helvetica", 10, "bold")).pack(padx=5, pady=5)
         
         entry_frame = ttk.Frame(master_frame)
-        entry_frame.pack(padx=5, pady=5)
-        ttk.Label(entry_frame, text="First Name: ").grid(row=0, column=1, pady=(0,5))
-        ttk.Label(entry_frame, text="Last Name: ").grid(row=1, column=1)
+        entry_frame.place(anchor="center", relx=.5 , rely=.50)
         
         firstname = ttk.Entry(entry_frame)
+        firstname.insert(0, "First Name")
         firstname.grid(row=0, column=2, pady=(0,5)),
         
         lastname = ttk.Entry(entry_frame)
+        lastname.insert(0, "Last Name")
         lastname.grid(row=1, column=2)
         
         button_frame = ttk.Frame(master_frame)
-        button_frame.pack(padx=5, pady=(5, 0))
+        button_frame.place(anchor="center", relx=.5 , rely=.75)
+
+        def focus_in(entry: ttk.Entry, placeholder):
+            if entry.get() == placeholder:
+                entry.delete(0, END)
+
+        def focus_out(entry: ttk.Entry, placeholder):
+            if entry.get() == placeholder: 
+                return
+            else:
+
+
+        firstname.bind("<FocusOut>", lambda event: focus_out(firstname, placeholder="First Name"))
+        firstname.bind("<FocusIn>", lambda event: focus_in(firstname, placeholder="First Name"))
+
+        lastname.bind("<FocusOut>", lambda event: focus_out(lastname, placeholder="Last Name"))
+        lastname.bind("<FocusIn>", lambda event: focus_in(lastname, placeholder="Last Name"))
 
         def add_ta():
             students = load_students()

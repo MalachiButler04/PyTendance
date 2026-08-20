@@ -5,7 +5,7 @@ from tkinter import messagebox
 from config.path_config import INFO_CONFIG
 
 class ColorPicker:
-    def __init__(self, root: ttk.Window, on_complete=None):
+    def __init__(self, root: ttk.Frame, on_complete=None):
         self.root = root
         self.on_complete = on_complete
 
@@ -66,7 +66,7 @@ class ColorPicker:
         self.color_label.place(relx=0.4154, rely=.5)
         
         self.button_frame = ttk.Frame(self.frame)
-        self.button_frame.pack(ipady=10, pady=(5, 0))
+        self.button_frame.pack(ipady=10)
 
         first_color = next(iter(self.hex_vals))
         self.selected_color = ttk.StringVar(self.root, value=first_color)
@@ -79,7 +79,7 @@ class ColorPicker:
         )
         self.ops.pack()
 
-        self.conf_button = ttk.Button(self.frame, text="Submit", command=self.get_conf, bootstyle="secondary")
+        self.conf_button = ttk.Button(self.button_frame, text="Submit", command=self.get_conf, bootstyle="secondary")
         self.conf_button.pack(pady=(5, 8))
 
         self.change_color(first_color)
