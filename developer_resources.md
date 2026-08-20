@@ -445,17 +445,20 @@ If dependencies change, update both [README.md](README.md) and any setup instruc
 
 ## Packaging
 
-PyTendance is packaged into a standalone executable with PyInstaller, driven by [PyTendance.spec](PyTendance.spec).
+PyTendance is packaged into a standalone, single-file executable with PyInstaller, driven by [PyTendance.spec](PyTendance.spec).
 
 - `PyTendance.spec` defines the entry point (`main.py`), bundled data files (`assets/`, `config/book_config.json`, `config/students_config.json`, `config/config_docs.md`), and the app icon (`assets/app_icon.ico`).
-- Build with `python -m PyInstaller PyTendance.spec`, run from the project root, since the paths in `PyTendance.spec` are relative to the project root.
-- Build output goes to `dist/PyTendance/` (both `build/` and `dist/` are gitignored, along with `*.zip`).
+- The `EXE()` target is built in onefile mode (`exclude_binaries=False`, with `a.binaries`/`a.datas` passed directly into `EXE`) — there is no `COLLECT()` step, so the build produces a single `PyTendance.exe` rather than a folder.
+- The spec overrides `CONF['distpath']` at the top of the file to always point at the Desktop (the OneDrive-redirected Desktop when `%OneDrive%` is set and has a `Desktop` folder, otherwise `~/Desktop`), instead of PyInstaller's default `dist/` folder.
+- Build with `python -m PyInstaller PyTendance.spec --noconfirm`, run from the project root, since the paths in `PyTendance.spec` are relative to the project root — or use [rebuild_app.bat](rebuild_app.bat) / [rebuild_app.sh](rebuild_app.sh), which do the same thing and can be re-run after any code change.
+- Build output goes straight to the Desktop as `PyTendance.exe` (`build/` and `dist/` are still used as PyInstaller's intermediate work directories and are gitignored, along with `*.zip`).
 
 Edit `PyTendance.spec` when changing:
 
 - which files are bundled into the executable (the `datas` list)
 - the app icon used for the built executable
 - the output executable name
+- the build output location (`CONF['distpath']`) — note the folder name may not be a string-prefix of another folder already inside the target directory (e.g. this project's own folder, `PyTendance-1`), since PyInstaller's overlap safety check for onedir builds does a plain string-prefix comparison and would false-positive; this isn't an issue in the current onefile setup since a single file has no such check
 
 If you add a new file that the app reads at runtime (for example a new default config file), add it to the `datas` list in `PyTendance.spec` so it is present in the packaged build.
 

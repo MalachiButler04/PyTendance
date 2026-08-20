@@ -111,13 +111,15 @@ PyTendance can be packaged into a standalone executable with [PyInstaller](https
 pip install pyinstaller
 ```
 
-2. From the project root, run:
+2. From the project root, run the rebuild script for your platform — [rebuild_app.bat](rebuild_app.bat) on Windows or [rebuild_app.sh](rebuild_app.sh) on macOS/Linux. Re-run the same script any time the code changes to rebuild the executable with your latest changes.
+
+Alternatively, run PyInstaller directly:
 
 ```bash
-python -m PyInstaller PyTendance.spec
+python -m PyInstaller PyTendance.spec --noconfirm
 ```
 
-The build output is written to `dist/PyTendance/`, bundling the app alongside `assets/` and the default `config/` files referenced in `PyTendance.spec`.
+The build produces a single `PyTendance.exe`, bundling the app alongside `assets/` and the default `config/` files referenced in `PyTendance.spec`. It is written straight to your Desktop (the OneDrive-redirected Desktop is used automatically if present), overwriting any previous build there.
 
 ## Notes
 
