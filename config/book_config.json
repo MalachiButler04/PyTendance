@@ -1,12 +1,9 @@
 {
-    "ref": "C:/Users/butle/Downloads/PhotoRoster_2377751_2026-08-03.csv",
-    "color": "#d9ead3",
-    "term": "Fall",
-    "days": [
-        "Tuesday",
-        "Thursday"
-    ],
+    "ref": "C:/Users/butle/Downloads/PhotoRoster_2425658_2026-08-19.csv",
+    "color": "",
+    "term": "",
+    "days": [],
     "TA": "Butler, Malachi",
-    "book-name": "AttendanceTabloid20082026-2782719671219672689.xlsx",
-    "book-ref": "C:/Users/butle/Downloads"
+    "book-name": "",
+    "book-ref": ""
 }

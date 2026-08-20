@@ -229,9 +229,6 @@ class Main:
                 self.init_colorpicker()
             else:
                 self.init_get_name(self.init_colorpicker)
-                    
-        else:
-            self._clear_content_frame()
 
     def init_colorpicker(self) -> None:
         if self.valid_csv:
@@ -292,6 +289,9 @@ class Main:
 
         self.ref = file_upload if file_upload != "" else None
         data["ref"] = file_upload
+
+        if self.ref != None:
+            self.button_frame.destroy()
 
         with open(INFO_CONFIG, "w") as fw:
             json.dump(data, fw, indent=4)
