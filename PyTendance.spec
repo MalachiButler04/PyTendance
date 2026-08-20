@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
+import sys
 
 from PyInstaller.config import CONF
 from PyInstaller.utils.hooks import collect_data_files
@@ -20,7 +21,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets'), ('config\\book_config.json', 'config'), ('config\\students_config.json', 'config'), ('config\\config_docs.md', 'config')] + ttkbootstrap_datas,
+    datas=[('assets', 'assets'), ('config/book_config.json', 'config'), ('config/students_config.json', 'config'), ('config/config_docs.md', 'config')] + ttkbootstrap_datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -51,5 +52,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets\\app_icon.ico'],
+    icon=['assets/app_icon.ico'] if sys.platform == 'win32' else None,
 )
